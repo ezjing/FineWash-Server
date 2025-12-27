@@ -1,53 +1,82 @@
-const mongoose = require('mongoose');
+const { DataTypes } = require('sequelize');
 const bcrypt = require('bcryptjs');
 
-const userSchema = new mongoose.Schema({
-  name: {
-    type: String,
-    required: [true, '이름은 필수입니다.'],
-    trim: true
-  },
-  email: {
-    type: String,
-    required: [true, '이메일은 필수입니다.'],
-    unique: true,
-    lowercase: true,
-    trim: true
-  },
-  phone: {
-    type: String,
-    required: [true, '전화번호는 필수입니다.'],
-    trim: true
-  },
-  password: {
-    type: String,
-    required: [true, '비밀번호는 필수입니다.'],
-    minlength: 6,
-    select: false
-  },
-  profileImage: {
-    type: String,
-    default: null
-  },
-  createdAt: {
-    type: Date,
-    default: Date.now
-  }
-});
+module.exports = (sequelize) => {
+  const User = sequelize.define('User', {
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
+    name: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      validate: {
+        notEmpty: { msg: '이름은 필수입니다.' }
+      }
+    },
+    email: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      unique: true,
+      validate: {
+        isEmail: { msg: '유효한 이메일 형식이 아닙니다.' },
+        notEmpty: { msg: '이메일은 필수입니다.' }
+      }
+    },
+    phone: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      validate: {
+        notEmpty: { msg: '전화번호는 필수입니다.' }
+      }
+    },
+    password: {
+      type: DataTypes.STRING(255),
+      allowNull: false,
+      validate: {
+        len: { args: [6, 255], msg: '비밀번호는 최소 6자 이상이어야 합니다.' }
+      }
+    },
+    profile_image: {
+      type: DataTypes.STRING(500),
+      allowNull: true,
+      defaultValue: null
+    }
+  }, {
+    tableName: 'users',
+    timestamps: true,
+    createdAt: 'created_at',
+    updatedAt: 'updated_at',
+    hooks: {
+      // 비밀번호 해싱
+      beforeCreate: async (user) => {
+        if (user.password) {
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(user.password, salt);
+        }
+      },
+      beforeUpdate: async (user) => {
+        if (user.changed('password')) {
+          const salt = await bcrypt.genSalt(10);
+          user.password = await bcrypt.hash(user.password, salt);
+        }
+      }
+    },
+    defaultScope: {
+      attributes: { exclude: ['password'] }
+    },
+    scopes: {
+      withPassword: {
+        attributes: { include: ['password'] }
+      }
+    }
+  });
 
-// 비밀번호 해싱
-userSchema.pre('save', async function(next) {
-  if (!this.isModified('password')) return next();
-  
-  const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
-  next();
-});
+  // 비밀번호 검증 메서드
+  User.prototype.comparePassword = async function(candidatePassword) {
+    return await bcrypt.compare(candidatePassword, this.password);
+  };
 
-// 비밀번호 검증 메서드
-userSchema.methods.comparePassword = async function(candidatePassword) {
-  return await bcrypt.compare(candidatePassword, this.password);
+  return User;
 };
-
-module.exports = mongoose.model('User', userSchema);
-

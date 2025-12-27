@@ -1,7 +1,7 @@
 const express = require('express');
 const jwt = require('jsonwebtoken');
 const { body, validationResult } = require('express-validator');
-const User = require('../models/User');
+const { User } = require('../models');
 const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
@@ -34,7 +34,7 @@ router.post('/signup', [
     const { name, email, phone, password } = req.body;
 
     // 이메일 중복 확인
-    const existingUser = await User.findOne({ email });
+    const existingUser = await User.findOne({ where: { email } });
     if (existingUser) {
       return res.status(400).json({
         success: false,
@@ -43,18 +43,17 @@ router.post('/signup', [
     }
 
     // 사용자 생성
-    const user = new User({ name, email, phone, password });
-    await user.save();
+    const user = await User.create({ name, email, phone, password });
 
     // 토큰 생성
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
 
     res.status(201).json({
       success: true,
       message: '회원가입이 완료되었습니다.',
       token,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         phone: user.phone
@@ -86,7 +85,7 @@ router.post('/login', [
     const { email, password } = req.body;
 
     // 사용자 찾기 (비밀번호 포함)
-    const user = await User.findOne({ email }).select('+password');
+    const user = await User.scope('withPassword').findOne({ where: { email } });
     if (!user) {
       return res.status(401).json({
         success: false,
@@ -104,14 +103,14 @@ router.post('/login', [
     }
 
     // 토큰 생성
-    const token = generateToken(user._id);
+    const token = generateToken(user.id);
 
     res.json({
       success: true,
       message: '로그인 성공',
       token,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         phone: user.phone
@@ -129,7 +128,7 @@ router.post('/login', [
 // 현재 사용자 정보 조회
 router.get('/me', authMiddleware, async (req, res) => {
   try {
-    const user = await User.findById(req.user.userId);
+    const user = await User.findByPk(req.user.userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -140,12 +139,12 @@ router.get('/me', authMiddleware, async (req, res) => {
     res.json({
       success: true,
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         phone: user.phone,
-        profileImage: user.profileImage,
-        createdAt: user.createdAt
+        profileImage: user.profile_image,
+        createdAt: user.created_at
       }
     });
   } catch (error) {
@@ -158,4 +157,3 @@ router.get('/me', authMiddleware, async (req, res) => {
 });
 
 module.exports = router;
-

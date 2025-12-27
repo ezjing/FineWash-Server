@@ -1,6 +1,5 @@
 const express = require('express');
-const Product = require('../models/Product');
-const authMiddleware = require('../middleware/auth');
+const { Product } = require('../models');
 
 const router = express.Router();
 
@@ -17,10 +16,10 @@ const dummyProducts = [
 // 상품 목록 조회 (SearchLogic1)
 router.get('/', async (req, res) => {
   try {
-    // MongoDB에서 상품 조회 시도
+    // MySQL에서 상품 조회 시도
     let products;
     try {
-      products = await Product.find().sort({ createdAt: -1 });
+      products = await Product.findAll({ order: [['created_at', 'DESC']] });
     } catch (dbError) {
       // DB 연결이 없는 경우 더미 데이터 반환
       products = null;
@@ -37,7 +36,7 @@ router.get('/', async (req, res) => {
     res.json({
       success: true,
       products: products.map(p => ({
-        id: p._id,
+        id: p.id,
         name: p.name,
         price: p.price,
         image: p.image,
@@ -61,7 +60,7 @@ router.get('/:id', async (req, res) => {
   try {
     let product;
     try {
-      product = await Product.findById(req.params.id);
+      product = await Product.findByPk(req.params.id);
     } catch (dbError) {
       product = null;
     }
@@ -81,7 +80,7 @@ router.get('/:id', async (req, res) => {
     res.json({
       success: true,
       product: {
-        id: product._id || product.id,
+        id: product.id,
         name: product.name,
         price: product.price,
         image: product.image,
@@ -104,7 +103,7 @@ router.get('/category/:category', async (req, res) => {
   try {
     let products;
     try {
-      products = await Product.find({ category: req.params.category });
+      products = await Product.findAll({ where: { category: req.params.category } });
     } catch (dbError) {
       products = null;
     }
@@ -116,7 +115,7 @@ router.get('/category/:category', async (req, res) => {
     res.json({
       success: true,
       products: products.map(p => ({
-        id: p._id || p.id,
+        id: p.id,
         name: p.name,
         price: p.price,
         image: p.image,
@@ -133,4 +132,3 @@ router.get('/category/:category', async (req, res) => {
 });
 
 module.exports = router;
-

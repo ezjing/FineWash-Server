@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const User = require('../models/User');
+const { User } = require('../models');
 const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
@@ -24,30 +24,30 @@ router.put('/profile', authMiddleware, [
     
     if (name) updateData.name = name;
     if (phone) updateData.phone = phone;
-    if (profileImage !== undefined) updateData.profileImage = profileImage;
+    if (profileImage !== undefined) updateData.profile_image = profileImage;
 
-    const user = await User.findByIdAndUpdate(
-      req.user.userId,
-      updateData,
-      { new: true }
-    );
+    const [updatedCount] = await User.update(updateData, {
+      where: { id: req.user.userId }
+    });
 
-    if (!user) {
+    if (updatedCount === 0) {
       return res.status(404).json({
         success: false,
         message: '사용자를 찾을 수 없습니다.'
       });
     }
 
+    const user = await User.findByPk(req.user.userId);
+
     res.json({
       success: true,
       message: '프로필이 업데이트되었습니다.',
       user: {
-        id: user._id,
+        id: user.id,
         name: user.name,
         email: user.email,
         phone: user.phone,
-        profileImage: user.profileImage
+        profileImage: user.profile_image
       }
     });
   } catch (error) {
@@ -75,7 +75,7 @@ router.put('/password', authMiddleware, [
 
     const { currentPassword, newPassword } = req.body;
 
-    const user = await User.findById(req.user.userId).select('+password');
+    const user = await User.scope('withPassword').findByPk(req.user.userId);
     if (!user) {
       return res.status(404).json({
         success: false,
@@ -108,4 +108,3 @@ router.put('/password', authMiddleware, [
 });
 
 module.exports = router;
-

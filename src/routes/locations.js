@@ -1,5 +1,5 @@
 const express = require('express');
-const WashLocation = require('../models/WashLocation');
+const { WashLocation } = require('../models');
 
 const router = express.Router();
 
@@ -36,7 +36,7 @@ router.get('/', async (req, res) => {
   try {
     let locations;
     try {
-      locations = await WashLocation.find().sort({ distance: 1 });
+      locations = await WashLocation.findAll({ order: [['distance', 'ASC']] });
     } catch (dbError) {
       locations = null;
     }
@@ -52,13 +52,13 @@ router.get('/', async (req, res) => {
     res.json({
       success: true,
       locations: locations.map(l => ({
-        id: l._id,
+        id: l.id,
         name: l.name,
         address: l.address,
         distance: l.distance,
         rating: l.rating,
-        reviewCount: l.reviewCount,
-        imageUrl: l.imageUrl
+        reviewCount: l.review_count,
+        imageUrl: l.image_url
       }))
     });
   } catch (error) {
@@ -76,7 +76,7 @@ router.get('/:id', async (req, res) => {
   try {
     let location;
     try {
-      location = await WashLocation.findById(req.params.id);
+      location = await WashLocation.findByPk(req.params.id);
     } catch (dbError) {
       location = null;
     }
@@ -96,13 +96,13 @@ router.get('/:id', async (req, res) => {
     res.json({
       success: true,
       location: {
-        id: location._id || location.id,
+        id: location.id,
         name: location.name,
         address: location.address,
         distance: location.distance,
         rating: location.rating,
-        reviewCount: location.reviewCount,
-        imageUrl: location.imageUrl
+        reviewCount: location.review_count || location.reviewCount,
+        imageUrl: location.image_url || location.imageUrl
       }
     });
   } catch (error) {
@@ -143,4 +143,3 @@ router.get('/nearby', async (req, res) => {
 });
 
 module.exports = router;
-

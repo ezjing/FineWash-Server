@@ -1,6 +1,6 @@
 const express = require('express');
 const { body, validationResult } = require('express-validator');
-const Vehicle = require('../models/Vehicle');
+const { Vehicle } = require('../models');
 const authMiddleware = require('../middleware/auth');
 
 const router = express.Router();
@@ -8,17 +8,19 @@ const router = express.Router();
 // 차량 목록 조회 (SearchLogic1)
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const vehicles = await Vehicle.find({ userId: req.user.userId })
-      .sort({ createdAt: -1 });
+    const vehicles = await Vehicle.findAll({
+      where: { user_id: req.user.userId },
+      order: [['created_at', 'DESC']]
+    });
 
     res.json({
       success: true,
       vehicles: vehicles.map(v => ({
-        id: v._id,
+        id: v.id,
         name: v.name,
         number: v.number,
         size: v.size,
-        userId: v.userId
+        userId: v.user_id
       }))
     });
   } catch (error) {
@@ -47,24 +49,22 @@ router.post('/', authMiddleware, [
 
     const { name, number, size } = req.body;
 
-    const vehicle = new Vehicle({
-      userId: req.user.userId,
+    const vehicle = await Vehicle.create({
+      user_id: req.user.userId,
       name,
       number,
       size
     });
 
-    await vehicle.save();
-
     res.status(201).json({
       success: true,
       message: '차량이 등록되었습니다.',
       vehicle: {
-        id: vehicle._id,
+        id: vehicle.id,
         name: vehicle.name,
         number: vehicle.number,
         size: vehicle.size,
-        userId: vehicle.userId
+        userId: vehicle.user_id
       }
     });
   } catch (error) {
@@ -86,28 +86,28 @@ router.put('/:id', authMiddleware, async (req, res) => {
     if (number) updateData.number = number;
     if (size) updateData.size = size;
 
-    const vehicle = await Vehicle.findOneAndUpdate(
-      { _id: req.params.id, userId: req.user.userId },
-      updateData,
-      { new: true }
-    );
+    const [updatedCount] = await Vehicle.update(updateData, {
+      where: { id: req.params.id, user_id: req.user.userId }
+    });
 
-    if (!vehicle) {
+    if (updatedCount === 0) {
       return res.status(404).json({
         success: false,
         message: '차량을 찾을 수 없습니다.'
       });
     }
 
+    const vehicle = await Vehicle.findByPk(req.params.id);
+
     res.json({
       success: true,
       message: '차량 정보가 수정되었습니다.',
       vehicle: {
-        id: vehicle._id,
+        id: vehicle.id,
         name: vehicle.name,
         number: vehicle.number,
         size: vehicle.size,
-        userId: vehicle.userId
+        userId: vehicle.user_id
       }
     });
   } catch (error) {
@@ -122,12 +122,11 @@ router.put('/:id', authMiddleware, async (req, res) => {
 // 차량 삭제
 router.delete('/:id', authMiddleware, async (req, res) => {
   try {
-    const vehicle = await Vehicle.findOneAndDelete({
-      _id: req.params.id,
-      userId: req.user.userId
+    const deletedCount = await Vehicle.destroy({
+      where: { id: req.params.id, user_id: req.user.userId }
     });
 
-    if (!vehicle) {
+    if (deletedCount === 0) {
       return res.status(404).json({
         success: false,
         message: '차량을 찾을 수 없습니다.'
@@ -148,4 +147,3 @@ router.delete('/:id', authMiddleware, async (req, res) => {
 });
 
 module.exports = router;
-

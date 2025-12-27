@@ -1,10 +1,12 @@
 const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
-const mongoose = require('mongoose');
 
 // Load environment variables
 dotenv.config();
+
+// Import database
+const { sequelize } = require('./models');
 
 // Import routes
 const authRoutes = require('./routes/auth');
@@ -53,15 +55,17 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-// Connect to MongoDB and start server
+// Connect to MySQL and start server
 const startServer = async () => {
   try {
-    // MongoDB 연결 (연결 문자열이 있는 경우에만)
-    if (process.env.MONGODB_URI) {
-      await mongoose.connect(process.env.MONGODB_URI);
-      console.log('MongoDB connected successfully');
-    } else {
-      console.log('MongoDB URI not provided, running without database');
+    // MySQL 연결 테스트
+    await sequelize.authenticate();
+    console.log('MySQL connected successfully');
+
+    // 개발 환경에서 테이블 동기화 (alter: true는 기존 데이터 유지)
+    if (process.env.NODE_ENV === 'development') {
+      await sequelize.sync({ alter: true });
+      console.log('Database tables synchronized');
     }
 
     app.listen(PORT, () => {
@@ -69,13 +73,13 @@ const startServer = async () => {
       console.log(`Health check: http://localhost:${PORT}/api/health`);
     });
   } catch (error) {
-    console.error('Failed to start server:', error);
-    // MongoDB 없이도 서버 시작 가능
+    console.error('Failed to connect to MySQL:', error.message);
+    console.log('Starting server without database connection...');
+    
     app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT} (without MongoDB)`);
+      console.log(`Server is running on port ${PORT} (without MySQL)`);
     });
   }
 };
 
 startServer();
-

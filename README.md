@@ -64,10 +64,10 @@ npm run dev
 # 개발 모드 + 환경변수 설정
 npm run dev:watch
 
-# 개발 환경으로 실행 (.env.development 복사 후 실행)
+# 개발 환경으로 실행 (.env 에 자동 복사)
 npm run start:dev
 
-# 운영 환경으로 실행 (.env.production 복사 후 실행)
+# 운영 환경으로 실행 (.env 에 자동 복사)
 npm run start:prod
 
 # 운영 모드
@@ -86,11 +86,22 @@ npm start
 ### 개발 환경 (.env.development)
 
 ```bash
+# 서버 설정
 PORT=3000
 NODE_ENV=development
-MONGODB_URI=mongodb://localhost:27017/finewash_dev
+
+# MySQL 데이터베이스 설정
+DB_HOST=localhost
+DB_PORT=3306
+DB_NAME=finewash_dev
+DB_USER=root
+DB_PASSWORD=your_password_here
+
+# JWT 설정
 JWT_SECRET=dev-secret-key-for-local-development-only
 JWT_EXPIRES_IN=7d
+
+# 기타 설정
 LOG_LEVEL=debug
 CORS_ORIGIN=*
 ```
@@ -98,11 +109,22 @@ CORS_ORIGIN=*
 ### 운영 환경 (.env.production)
 
 ```bash
+# 서버 설정
 PORT=3000
 NODE_ENV=production
-MONGODB_URI=mongodb://your-production-db/finewash_prod
+
+# MySQL 데이터베이스 설정
+DB_HOST=your-production-db-host
+DB_PORT=3306
+DB_NAME=finewash_prod
+DB_USER=your_db_user
+DB_PASSWORD=your_secure_password  # ⚠️ 반드시 변경!
+
+# JWT 설정
 JWT_SECRET=CHANGE_THIS_TO_SECURE_RANDOM_STRING  # ⚠️ 반드시 변경!
 JWT_EXPIRES_IN=1d
+
+# 기타 설정
 LOG_LEVEL=error
 CORS_ORIGIN=https://your-app-domain.com
 ```
@@ -153,17 +175,17 @@ CORS_ORIGIN=https://your-app-domain.com
 
 ### 세차 위치 (Locations)
 
-| 메소드 | 경로                 | 설명        |
-| ------ | -------------------- | ----------- |
-| GET    | `/api/locations`     | 위치 목록   |
-| GET    | `/api/locations/:id` | 위치 상세   |
+| 메소드 | 경로                 | 설명      |
+| ------ | -------------------- | --------- |
+| GET    | `/api/locations`     | 위치 목록 |
+| GET    | `/api/locations/:id` | 위치 상세 |
 
 ---
 
 ## 🛠 기술 스택
 
 - **Express.js** - 웹 프레임워크
-- **MongoDB + Mongoose** - 데이터베이스
+- **MySQL + Sequelize** - 데이터베이스
 - **JWT (jsonwebtoken)** - 인증
 - **bcryptjs** - 비밀번호 암호화
 - **express-validator** - 입력 검증
@@ -184,4 +206,3 @@ CORS_ORIGIN=https://your-app-domain.com
 ## 📄 라이선스
 
 MIT License
-
