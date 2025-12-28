@@ -1,44 +1,75 @@
-const { DataTypes } = require('sequelize');
+const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
-  const Vehicle = sequelize.define('Vehicle', {
-    id: {
-      type: DataTypes.INTEGER,
-      primaryKey: true,
-      autoIncrement: true
+  const Vehicle = sequelize.define(
+    "Vehicle",
+    {
+      veh_idx: {
+        type: DataTypes.INTEGER,
+        primaryKey: true,
+        autoIncrement: true,
+        field: "veh_idx",
+      },
+      mem_idx: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: "mem_idx",
+        comment: "회원 인덱스",
+      },
+      vehicle_type: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        field: "vehicle_type",
+        comment: "차종 (준중형 등)",
+      },
+      model: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+        field: "model",
+        comment: "모델 (그렌저 등)",
+      },
+      vehicle_number: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        field: "vehicle_number",
+        comment: "차량번호",
+      },
+      color: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        field: "color",
+        comment: "색상",
+      },
+      year: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: "year",
+        comment: "연식",
+      },
+      remark: {
+        type: DataTypes.TEXT,
+        allowNull: true,
+        field: "remark",
+        comment: "비고",
+      },
+      create_id: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        field: "create_id",
+      },
+      update_id: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        field: "update_id",
+      },
     },
-    user_id: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      references: {
-        model: 'users',
-        key: 'id'
-      }
-    },
-    name: {
-      type: DataTypes.STRING(100),
-      allowNull: false,
-      validate: {
-        notEmpty: { msg: '차량 이름은 필수입니다.' }
-      }
-    },
-    number: {
-      type: DataTypes.STRING(20),
-      allowNull: false,
-      validate: {
-        notEmpty: { msg: '차량 번호는 필수입니다.' }
-      }
-    },
-    size: {
-      type: DataTypes.ENUM('small', 'medium', 'large', 'suv'),
-      defaultValue: 'medium'
+    {
+      tableName: "vehicles",
+      timestamps: true,
+      createdAt: "created_date",
+      updatedAt: "update_date",
     }
-  }, {
-    tableName: 'vehicles',
-    timestamps: true,
-    createdAt: 'created_at',
-    updatedAt: 'updated_at'
-  });
+  );
 
   return Vehicle;
 };

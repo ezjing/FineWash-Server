@@ -1,42 +1,44 @@
-const express = require('express');
-const { WashLocation } = require('../models');
+const express = require("express");
+const { WashLocation } = require("../models");
 
 const router = express.Router();
 
 // 더미 세차장 데이터
 const dummyLocations = [
-  { 
-    id: '1', 
-    name: '클린세차장 강남점', 
-    address: '서울 강남구 테헤란로 123', 
-    distance: '1.2km', 
-    rating: 4.8, 
-    reviewCount: 245 
+  {
+    id: "1",
+    name: "클린세차장 강남점",
+    address: "서울 강남구 테헤란로 123",
+    distance: "1.2km",
+    rating: 4.8,
+    reviewCount: 245,
   },
-  { 
-    id: '2', 
-    name: '프리미엄세차 역삼점', 
-    address: '서울 강남구 역삼동 456', 
-    distance: '2.5km', 
-    rating: 4.6, 
-    reviewCount: 189 
+  {
+    id: "2",
+    name: "프리미엄세차 역삼점",
+    address: "서울 강남구 역삼동 456",
+    distance: "2.5km",
+    rating: 4.6,
+    reviewCount: 189,
   },
-  { 
-    id: '3', 
-    name: '스피드세차 선릉점', 
-    address: '서울 강남구 선릉로 789', 
-    distance: '3.1km', 
-    rating: 4.7, 
-    reviewCount: 312 
-  }
+  {
+    id: "3",
+    name: "스피드세차 선릉점",
+    address: "서울 강남구 선릉로 789",
+    distance: "3.1km",
+    rating: 4.7,
+    reviewCount: 312,
+  },
 ];
 
 // 세차장 목록 조회 (SearchLogic1)
-router.get('/', async (req, res) => {
+router.get("/", async (req, res) => {
   try {
     let locations;
     try {
-      locations = await WashLocation.findAll({ order: [['distance', 'ASC']] });
+      locations = await WashLocation.findAll({
+        order: [["distance", "ASC"]],
+      });
     } catch (dbError) {
       locations = null;
     }
@@ -45,34 +47,34 @@ router.get('/', async (req, res) => {
     if (!locations || locations.length === 0) {
       return res.json({
         success: true,
-        locations: dummyLocations
+        locations: dummyLocations,
       });
     }
 
     res.json({
       success: true,
-      locations: locations.map(l => ({
+      locations: locations.map((l) => ({
         id: l.id,
         name: l.name,
         address: l.address,
         distance: l.distance,
         rating: l.rating,
         reviewCount: l.review_count,
-        imageUrl: l.image_url
-      }))
+        imageUrl: l.image_url,
+      })),
     });
   } catch (error) {
-    console.error('Get locations error:', error);
+    console.error("Get locations error:", error);
     // 오류 발생 시에도 더미 데이터 반환
     res.json({
       success: true,
-      locations: dummyLocations
+      locations: dummyLocations,
     });
   }
 });
 
 // 세차장 상세 조회
-router.get('/:id', async (req, res) => {
+router.get("/:id", async (req, res) => {
   try {
     let location;
     try {
@@ -83,13 +85,13 @@ router.get('/:id', async (req, res) => {
 
     // DB에서 못 찾으면 더미 데이터에서 검색
     if (!location) {
-      location = dummyLocations.find(l => l.id === req.params.id);
+      location = dummyLocations.find((l) => l.id === req.params.id);
     }
 
     if (!location) {
       return res.status(404).json({
         success: false,
-        message: '세차장을 찾을 수 없습니다.'
+        message: "세차장을 찾을 수 없습니다.",
       });
     }
 
@@ -102,20 +104,20 @@ router.get('/:id', async (req, res) => {
         distance: location.distance,
         rating: location.rating,
         reviewCount: location.review_count || location.reviewCount,
-        imageUrl: location.image_url || location.imageUrl
-      }
+        imageUrl: location.image_url || location.imageUrl,
+      },
     });
   } catch (error) {
-    console.error('Get location error:', error);
+    console.error("Get location error:", error);
     res.status(500).json({
       success: false,
-      message: '세차장 조회 중 오류가 발생했습니다.'
+      message: "세차장 조회 중 오류가 발생했습니다.",
     });
   }
 });
 
 // 근처 세차장 검색 (위치 기반)
-router.get('/nearby', async (req, res) => {
+router.get("/nearby", async (req, res) => {
   try {
     const { lat, lng, radius = 5 } = req.query;
 
@@ -123,7 +125,7 @@ router.get('/nearby', async (req, res) => {
     if (!lat || !lng) {
       return res.json({
         success: true,
-        locations: dummyLocations
+        locations: dummyLocations,
       });
     }
 
@@ -131,13 +133,13 @@ router.get('/nearby', async (req, res) => {
     // 현재는 더미 데이터 반환
     res.json({
       success: true,
-      locations: dummyLocations
+      locations: dummyLocations,
     });
   } catch (error) {
-    console.error('Get nearby locations error:', error);
+    console.error("Get nearby locations error:", error);
     res.status(500).json({
       success: false,
-      message: '세차장 검색 중 오류가 발생했습니다.'
+      message: "세차장 검색 중 오류가 발생했습니다.",
     });
   }
 });

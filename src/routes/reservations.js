@@ -1,6 +1,6 @@
 const express = require("express");
 const { body, validationResult } = require("express-validator");
-const { Booking, Vehicle } = require("../models");
+const { Reservation, Vehicle } = require("../models");
 const authMiddleware = require("../middleware/auth");
 
 const router = express.Router();
@@ -8,31 +8,31 @@ const router = express.Router();
 // 예약 목록 조회 (SearchLogic1)
 router.get("/", authMiddleware, async (req, res) => {
   try {
-    const bookings = await Booking.findAll({
-      where: { user_id: req.user.userId },
+    const bookings = await Reservation.findAll({
+      where: { mem_idx: req.user.memIdx },
       include: [{ model: Vehicle, as: "vehicle" }],
-      order: [["created_at", "DESC"]],
+      order: [["created_date", "DESC"]],
     });
 
     res.json({
       success: true,
       bookings: bookings.map((b) => ({
-        id: b.id,
-        type: b.type,
-        vehicleId: b.vehicle_id,
-        serviceType: b.service_type,
+        id: b.resv_idx,
+        mainOption: b.main_option,
+        midOption: b.mid_option,
+        subOption: b.sub_option,
+        vehicleId: b.veh_idx,
+        vehicleLocation: b.vehicle_location,
+        contractYn: b.contract_yn,
         date: b.date,
         time: b.time,
-        address: b.address,
-        washLocation: b.wash_location,
-        price: b.price,
-        status: b.status,
-        createdAt: b.created_at,
+        createdAt: b.created_date,
         vehicle: b.vehicle
           ? {
-              id: b.vehicle.id,
-              name: b.vehicle.name,
-              number: b.vehicle.number,
+              id: b.vehicle.veh_idx,
+              vehicleType: b.vehicle.vehicle_type,
+              model: b.vehicle.model,
+              vehicleNumber: b.vehicle.vehicle_number,
             }
           : null,
       })),
@@ -49,8 +49,8 @@ router.get("/", authMiddleware, async (req, res) => {
 // 예약 상세 조회
 router.get("/:id", authMiddleware, async (req, res) => {
   try {
-    const booking = await Booking.findOne({
-      where: { id: req.params.id, user_id: req.user.userId },
+    const booking = await Reservation.findOne({
+      where: { resv_idx: req.params.id, mem_idx: req.user.memIdx },
       include: [{ model: Vehicle, as: "vehicle" }],
     });
 
@@ -64,22 +64,22 @@ router.get("/:id", authMiddleware, async (req, res) => {
     res.json({
       success: true,
       booking: {
-        id: booking.id,
-        type: booking.type,
-        vehicleId: booking.vehicle_id,
-        serviceType: booking.service_type,
+        id: booking.resv_idx,
+        mainOption: booking.main_option,
+        midOption: booking.mid_option,
+        subOption: booking.sub_option,
+        vehicleId: booking.veh_idx,
+        vehicleLocation: booking.vehicle_location,
+        contractYn: booking.contract_yn,
         date: booking.date,
         time: booking.time,
-        address: booking.address,
-        washLocation: booking.wash_location,
-        price: booking.price,
-        status: booking.status,
-        createdAt: booking.created_at,
+        createdAt: booking.created_date,
         vehicle: booking.vehicle
           ? {
-              id: booking.vehicle.id,
-              name: booking.vehicle.name,
-              number: booking.vehicle.number,
+              id: booking.vehicle.veh_idx,
+              vehicleType: booking.vehicle.vehicle_type,
+              model: booking.vehicle.model,
+              vehicleNumber: booking.vehicle.vehicle_number,
             }
           : null,
       },
@@ -98,14 +98,10 @@ router.post(
   "/",
   authMiddleware,
   [
-    body("type")
-      .isIn(["mobile", "partner"])
-      .withMessage("올바른 예약 유형을 선택해주세요."),
     body("vehicleId").notEmpty().withMessage("차량을 선택해주세요."),
-    body("serviceType").notEmpty().withMessage("서비스 종류를 선택해주세요."),
+    body("mainOption").notEmpty().withMessage("예약 대옵션을 선택해주세요."),
     body("date").notEmpty().withMessage("날짜를 선택해주세요."),
     body("time").notEmpty().withMessage("시간을 선택해주세요."),
-    body("price").isNumeric().withMessage("가격이 올바르지 않습니다."),
   ],
   async (req, res) => {
     try {
@@ -118,60 +114,43 @@ router.post(
       }
 
       const {
-        type,
         vehicleId,
-        serviceType,
+        main_option,
+        mid_option,
+        sub_option,
+        vehicle_location,
         date,
         time,
-        address,
-        washLocation,
-        price,
+        bus_dtl_idx,
       } = req.body;
 
-      // 출장세차는 주소 필수
-      if (type === "mobile" && !address) {
-        return res.status(400).json({
-          success: false,
-          message: "출장 세차 예약 시 주소는 필수입니다.",
-        });
-      }
-
-      // 제휴세차장은 세차장 필수
-      if (type === "partner" && !washLocation) {
-        return res.status(400).json({
-          success: false,
-          message: "제휴 세차장 예약 시 세차장 선택은 필수입니다.",
-        });
-      }
-
-      const booking = await Booking.create({
-        user_id: req.user.userId,
-        vehicle_id: vehicleId,
-        type,
-        service_type: serviceType,
+      const booking = await Reservation.create({
+        mem_idx: req.user.memIdx,
+        veh_idx: vehicleId,
+        bus_dtl_idx: bus_dtl_idx || null,
+        main_option: main_option,
+        mid_option: mid_option || null,
+        sub_option: sub_option || null,
+        vehicle_location: vehicle_location || null,
         date,
         time,
-        address: type === "mobile" ? address : null,
-        wash_location: type === "partner" ? washLocation : null,
-        price,
-        status: "pending",
+        contract_yn: "Y", // 기본값 승낙
       });
 
       res.status(201).json({
         success: true,
         message: "예약이 완료되었습니다.",
         booking: {
-          id: booking.id,
-          type: booking.type,
-          vehicleId: booking.vehicle_id,
-          serviceType: booking.service_type,
+          id: booking.resv_idx,
+          mainOption: booking.main_option,
+          midOption: booking.mid_option,
+          subOption: booking.sub_option,
+          vehicleId: booking.veh_idx,
+          vehicleLocation: booking.vehicle_location,
+          contractYn: booking.contract_yn,
           date: booking.date,
           time: booking.time,
-          address: booking.address,
-          washLocation: booking.wash_location,
-          price: booking.price,
-          status: booking.status,
-          createdAt: booking.created_at,
+          createdAt: booking.created_date,
         },
       });
     } catch (error) {
@@ -184,11 +163,11 @@ router.post(
   }
 );
 
-// 예약 취소
+// 예약 취소 (contract_yn을 'N'으로 변경)
 router.put("/:id/cancel", authMiddleware, async (req, res) => {
   try {
-    const booking = await Booking.findOne({
-      where: { id: req.params.id, user_id: req.user.userId },
+    const booking = await Reservation.findOne({
+      where: { resv_idx: req.params.id, mem_idx: req.user.memIdx },
     });
 
     if (!booking) {
@@ -198,29 +177,22 @@ router.put("/:id/cancel", authMiddleware, async (req, res) => {
       });
     }
 
-    if (booking.status === "completed") {
-      return res.status(400).json({
-        success: false,
-        message: "완료된 예약은 취소할 수 없습니다.",
-      });
-    }
-
-    if (booking.status === "cancelled") {
+    if (booking.contract_yn === "N") {
       return res.status(400).json({
         success: false,
         message: "이미 취소된 예약입니다.",
       });
     }
 
-    booking.status = "cancelled";
+    booking.contract_yn = "N";
     await booking.save();
 
     res.json({
       success: true,
       message: "예약이 취소되었습니다.",
       booking: {
-        id: booking.id,
-        status: booking.status,
+        id: booking.resv_idx,
+        contractYn: booking.contract_yn,
       },
     });
   } catch (error) {
@@ -233,3 +205,4 @@ router.put("/:id/cancel", authMiddleware, async (req, res) => {
 });
 
 module.exports = router;
+

@@ -15,7 +15,7 @@ const sequelize = new Sequelize(
       charset: "utf8mb4",
       collate: "utf8mb4_unicode_ci",
       timestamps: true,
-      underscored: true, // snake_case 컬럼명 사용
+      underscored: false, // camelCase 필드명 사용 (DB는 snake_case)
     },
     pool: {
       max: 10,
@@ -27,31 +27,31 @@ const sequelize = new Sequelize(
 );
 
 // 모델 import
-const User = require("./User")(sequelize);
+const Member = require("./Member")(sequelize);
 const Vehicle = require("./Vehicle")(sequelize);
-const Booking = require("./Booking")(sequelize);
+const Reservation = require("./Reservation")(sequelize);
 const Product = require("./Product")(sequelize);
 const WashLocation = require("./WashLocation")(sequelize);
 
 // 관계 설정
-// User - Vehicle (1:N)
-User.hasMany(Vehicle, { foreignKey: "user_id", as: "vehicles" });
-Vehicle.belongsTo(User, { foreignKey: "user_id", as: "user" });
+// Member - Vehicle (1:N)
+Member.hasMany(Vehicle, { foreignKey: "mem_idx", as: "vehicles" });
+Vehicle.belongsTo(Member, { foreignKey: "mem_idx", as: "member" });
 
-// User - Booking (1:N)
-User.hasMany(Booking, { foreignKey: "user_id", as: "bookings" });
-Booking.belongsTo(User, { foreignKey: "user_id", as: "user" });
+// Member - Reservation (1:N)
+Member.hasMany(Reservation, { foreignKey: "mem_idx", as: "reservations" });
+Reservation.belongsTo(Member, { foreignKey: "mem_idx", as: "member" });
 
-// Vehicle - Booking (1:N)
-Vehicle.hasMany(Booking, { foreignKey: "vehicle_id", as: "bookings" });
-Booking.belongsTo(Vehicle, { foreignKey: "vehicle_id", as: "vehicle" });
+// Vehicle - Reservation (1:N)
+Vehicle.hasMany(Reservation, { foreignKey: "veh_idx", as: "reservations" });
+Reservation.belongsTo(Vehicle, { foreignKey: "veh_idx", as: "vehicle" });
 
 module.exports = {
   sequelize,
   Sequelize,
-  User,
+  Member,
   Vehicle,
-  Booking,
+  Reservation,
   Product,
   WashLocation,
 };
