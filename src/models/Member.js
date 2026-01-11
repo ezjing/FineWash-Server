@@ -16,11 +16,6 @@ module.exports = (sequelize) => {
         allowNull: true,
         field: "bus_mst_idx",
       },
-      user_id: {
-        type: DataTypes.STRING(100),
-        allowNull: true,
-        field: "user_id",
-      },
       password: {
         type: DataTypes.STRING(255),
         allowNull: true,
@@ -72,11 +67,23 @@ module.exports = (sequelize) => {
         allowNull: true,
         field: "update_id",
       },
+      create_date: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: "create_date",
+        defaultValue: DataTypes.NOW,
+      },
+      update_date: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: "update_date",
+        defaultValue: DataTypes.NOW,
+      },
     },
     {
       tableName: "members",
       timestamps: true,
-      createdAt: "created_date",
+      createdAt: "create_date",
       updatedAt: "update_date",
       hooks: {
         // 비밀번호 해싱
