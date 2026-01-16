@@ -70,6 +70,24 @@ module.exports = (sequelize) => {
         field: "time",
         comment: "예약시간",
       },
+      imp_uid: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+        field: "imp_uid",
+        comment: "포트원 결제 고유번호",
+      },
+      merchant_uid: {
+        type: DataTypes.STRING(100),
+        allowNull: true,
+        field: "merchant_uid",
+        comment: "주문 고유번호",
+      },
+      payment_amount: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        field: "payment_amount",
+        comment: "결제 금액",
+      },
       create_id: {
         type: DataTypes.STRING(50),
         allowNull: true,

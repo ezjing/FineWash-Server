@@ -16,17 +16,20 @@ router.get("/", authMiddleware, async (req, res) => {
 
     res.json({
       success: true,
-      bookings: bookings.map((b) => ({
+      reservations: bookings.map((b) => ({
         id: b.resv_idx,
+        resvIdx: b.resv_idx,
         mainOption: b.main_option,
         midOption: b.mid_option,
         subOption: b.sub_option,
         vehicleId: b.veh_idx,
+        vehIdx: b.veh_idx,
         vehicleLocation: b.vehicle_location,
         contractYn: b.contract_yn,
         date: b.date,
         time: b.time,
         createdAt: b.created_date,
+        createdDate: b.created_date,
         vehicle: b.vehicle
           ? {
               id: b.vehicle.veh_idx,
@@ -63,17 +66,20 @@ router.get("/:id", authMiddleware, async (req, res) => {
 
     res.json({
       success: true,
-      booking: {
+      reservation: {
         id: booking.resv_idx,
+        resvIdx: booking.resv_idx,
         mainOption: booking.main_option,
         midOption: booking.mid_option,
         subOption: booking.sub_option,
         vehicleId: booking.veh_idx,
+        vehIdx: booking.veh_idx,
         vehicleLocation: booking.vehicle_location,
         contractYn: booking.contract_yn,
         date: booking.date,
         time: booking.time,
         createdAt: booking.created_date,
+        createdDate: booking.created_date,
         vehicle: booking.vehicle
           ? {
               id: booking.vehicle.veh_idx,
@@ -122,6 +128,9 @@ router.post(
         date,
         time,
         bus_dtl_idx,
+        imp_uid,
+        merchant_uid,
+        payment_amount,
       } = req.body;
 
       const booking = await Reservation.create({
@@ -135,22 +144,28 @@ router.post(
         date,
         time,
         contract_yn: "Y", // 기본값 승낙
+        imp_uid: imp_uid || null,
+        merchant_uid: merchant_uid || null,
+        payment_amount: payment_amount || null,
       });
 
       res.status(201).json({
         success: true,
         message: "예약이 완료되었습니다.",
-        booking: {
+        reservation: {
           id: booking.resv_idx,
+          resvIdx: booking.resv_idx,
           mainOption: booking.main_option,
           midOption: booking.mid_option,
           subOption: booking.sub_option,
           vehicleId: booking.veh_idx,
+          vehIdx: booking.veh_idx,
           vehicleLocation: booking.vehicle_location,
           contractYn: booking.contract_yn,
           date: booking.date,
           time: booking.time,
           createdAt: booking.created_date,
+          createdDate: booking.created_date,
         },
       });
     } catch (error) {
@@ -190,8 +205,9 @@ router.put("/:id/cancel", authMiddleware, async (req, res) => {
     res.json({
       success: true,
       message: "예약이 취소되었습니다.",
-      booking: {
+      reservation: {
         id: booking.resv_idx,
+        resvIdx: booking.resv_idx,
         contractYn: booking.contract_yn,
       },
     });
@@ -205,4 +221,3 @@ router.put("/:id/cancel", authMiddleware, async (req, res) => {
 });
 
 module.exports = router;
-
