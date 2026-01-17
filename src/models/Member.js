@@ -57,6 +57,11 @@ module.exports = (sequelize) => {
         allowNull: true,
         field: "social_type",
       },
+      social_id: {
+        type: DataTypes.STRING(255),
+        allowNull: true,
+        field: "social_id",
+      },
       create_id: {
         type: DataTypes.STRING(50),
         allowNull: true,

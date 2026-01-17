@@ -34,24 +34,26 @@ router.post(
         });
       }
 
-      const { name, email, phone, password, user_id } = req.body;
+      const { name, email, phone, password, user_id, address, address_detail } = req.body;
 
       // 이메일 중복 확인
       const existingUser = await Member.findOne({ where: { email } });
       if (existingUser) {
         return res.status(400).json({
           success: false,
-          message: "이미 등록된 이메일입니다.",
+          message: "이미 등록된 이메일입니다."
         });
       }
 
+      const fullAddress = `${address} ${address_detail}`;
       // 사용자 생성
       const user = await Member.create({
         name,
         email,
         phone,
         password,
-        user_id: user_id || email, // user_id가 없으면 email 사용
+        address: fullAddress,
+        user_id
       });
 
       // 토큰 생성
