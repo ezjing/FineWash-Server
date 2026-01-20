@@ -14,7 +14,7 @@ const memberRoutes = require("./routes/members");
 const vehicleRoutes = require("./routes/vehicles");
 const reservationRoutes = require("./routes/reservations");
 const productRoutes = require("./routes/products");
-const washLocationRoutes = require("./routes/wash_locations");
+const businessRoutes = require("./routes/businesses");
 const paymentRoutes = require("./routes/payments");
 
 const app = express();
@@ -29,7 +29,7 @@ app.use("/api/members", memberRoutes);
 app.use("/api/vehicles", vehicleRoutes);
 app.use("/api/reservations", reservationRoutes);
 app.use("/api/products", productRoutes);
-app.use("/api/wash-locations", washLocationRoutes);
+app.use("/api/businesses", businessRoutes);
 app.use("/api/payments", paymentRoutes);
 
 // Health check endpoint

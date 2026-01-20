@@ -31,7 +31,6 @@ const Member = require("./Member")(sequelize);
 const Vehicle = require("./Vehicle")(sequelize);
 const Reservation = require("./Reservation")(sequelize);
 const Product = require("./Product")(sequelize);
-const WashLocation = require("./WashLocation")(sequelize);
 const FcmToken = require("./FcmToken")(sequelize);
 const BusinessMaster = require("./BusinessMaster")(sequelize);
 const BusinessDetail = require("./BusinessDetail")(sequelize);
@@ -102,7 +101,6 @@ module.exports = {
   Vehicle,
   Reservation,
   Product,
-  WashLocation,
   FcmToken,
   BusinessMaster,
   BusinessDetail,
