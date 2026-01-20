@@ -93,10 +93,22 @@ module.exports = (sequelize) => {
         allowNull: true,
         field: "create_id",
       },
+      create_date: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: "create_date",
+        defaultValue: DataTypes.NOW,
+      },
       update_id: {
         type: DataTypes.STRING(50),
         allowNull: true,
         field: "update_id",
+      },
+      update_date: {
+        type: DataTypes.DATE,
+        allowNull: true,
+        field: "update_date",
+        defaultValue: DataTypes.NOW,
       },
     },
     {

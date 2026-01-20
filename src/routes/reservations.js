@@ -105,7 +105,7 @@ router.post(
   authMiddleware,
   [
     body("vehicleId").notEmpty().withMessage("차량을 선택해주세요."),
-    body("mainOption").notEmpty().withMessage("예약 대옵션을 선택해주세요."),
+    body("main_option").notEmpty().withMessage("예약 대옵션을 선택해주세요."),
     body("date").notEmpty().withMessage("날짜를 선택해주세요."),
     body("time").notEmpty().withMessage("시간을 선택해주세요."),
   ],
@@ -133,6 +133,26 @@ router.post(
         payment_amount,
       } = req.body;
 
+      // 로그인한 유저 ID (create_id, update_id에 사용)
+      const userId = req.user.memIdx?.toString() || req.user.userId || "system";
+
+      console.log("예약 생성 요청 데이터:", {
+        mem_idx: req.user.memIdx,
+        veh_idx: vehicleId,
+        bus_dtl_idx: bus_dtl_idx || null,
+        main_option: main_option,
+        mid_option: mid_option || null,
+        sub_option: sub_option || null,
+        vehicle_location: vehicle_location || null,
+        date,
+        time,
+        imp_uid: imp_uid || null,
+        merchant_uid: merchant_uid || null,
+        payment_amount: payment_amount || null,
+        create_id: userId,
+        update_id: userId,
+      });
+
       const booking = await Reservation.create({
         mem_idx: req.user.memIdx,
         veh_idx: vehicleId,
@@ -147,7 +167,11 @@ router.post(
         imp_uid: imp_uid || null,
         merchant_uid: merchant_uid || null,
         payment_amount: payment_amount || null,
+        create_id: userId, // 로그인한 유저 ID
+        update_id: userId, // 로그인한 유저 ID
       });
+
+      console.log("예약 생성 성공:", booking.resv_idx);
 
       res.status(201).json({
         success: true,

@@ -1,14 +1,14 @@
 const { DataTypes } = require("sequelize");
 
 module.exports = (sequelize) => {
-  const Vehicle = sequelize.define(
-    "Vehicle",
+  const FcmToken = sequelize.define(
+    "FcmToken",
     {
-      veh_idx: {
+      fcm_idx: {
         type: DataTypes.INTEGER,
         primaryKey: true,
         autoIncrement: true,
-        field: "veh_idx",
+        field: "fcm_idx",
       },
       mem_idx: {
         type: DataTypes.INTEGER,
@@ -16,41 +16,17 @@ module.exports = (sequelize) => {
         field: "mem_idx",
         comment: "회원 인덱스",
       },
-      vehicle_type: {
-        type: DataTypes.STRING(50),
+      token: {
+        type: DataTypes.STRING(500),
         allowNull: true,
-        field: "vehicle_type",
-        comment: "차종 (준중형 등)",
+        field: "token",
+        comment: "FCM 토큰",
       },
-      model: {
-        type: DataTypes.STRING(100),
-        allowNull: true,
-        field: "model",
-        comment: "모델 (그렌저 등)",
-      },
-      vehicle_number: {
+      device_type: {
         type: DataTypes.STRING(20),
         allowNull: true,
-        field: "vehicle_number",
-        comment: "차량번호",
-      },
-      color: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
-        field: "color",
-        comment: "색상",
-      },
-      year: {
-        type: DataTypes.INTEGER,
-        allowNull: true,
-        field: "year",
-        comment: "연식",
-      },
-      remark: {
-        type: DataTypes.TEXT,
-        allowNull: true,
-        field: "remark",
-        comment: "비고",
+        field: "device_type",
+        comment: "기기 유형 (mobile, tablet, pc)",
       },
       create_id: {
         type: DataTypes.STRING(50),
@@ -76,12 +52,12 @@ module.exports = (sequelize) => {
       },
     },
     {
-      tableName: "vehicles",
+      tableName: "fcm_tokens",
       timestamps: true,
-      createdAt: "created_date",
+      createdAt: "create_date",
       updatedAt: "update_date",
     }
   );
 
-  return Vehicle;
+  return FcmToken;
 };

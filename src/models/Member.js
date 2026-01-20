@@ -26,11 +26,6 @@ module.exports = (sequelize) => {
         allowNull: true,
         field: "name",
       },
-      fcm_token: {
-        type: DataTypes.STRING(500),
-        allowNull: true,
-        field: "fcm_token",
-      },
       address: {
         type: DataTypes.STRING(500),
         allowNull: true,
@@ -62,21 +57,27 @@ module.exports = (sequelize) => {
         allowNull: true,
         field: "social_id",
       },
+      member_type: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        field: "member_type",
+        comment: "회원 유형 (U: 일반, B: 사업자, A: 관리자)",
+      },
       create_id: {
         type: DataTypes.STRING(50),
         allowNull: true,
         field: "create_id",
-      },
-      update_id: {
-        type: DataTypes.STRING(50),
-        allowNull: true,
-        field: "update_id",
       },
       create_date: {
         type: DataTypes.DATE,
         allowNull: true,
         field: "create_date",
         defaultValue: DataTypes.NOW,
+      },
+      update_id: {
+        type: DataTypes.STRING(50),
+        allowNull: true,
+        field: "update_id",
       },
       update_date: {
         type: DataTypes.DATE,
@@ -123,4 +124,3 @@ module.exports = (sequelize) => {
 
   return Member;
 };
-

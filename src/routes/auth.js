@@ -34,14 +34,15 @@ router.post(
         });
       }
 
-      const { name, email, phone, password, user_id, address, address_detail } = req.body;
+      const { name, email, phone, password, user_id, address, address_detail } =
+        req.body;
 
       // 이메일 중복 확인
       const existingUser = await Member.findOne({ where: { email } });
       if (existingUser) {
         return res.status(400).json({
           success: false,
-          message: "이미 등록된 이메일입니다."
+          message: "이미 등록된 이메일입니다.",
         });
       }
 
@@ -53,7 +54,7 @@ router.post(
         phone,
         password,
         address: fullAddress,
-        user_id
+        user_id,
       });
 
       // 토큰 생성
@@ -104,7 +105,40 @@ router.post(
       const user = await Member.scope("withPassword").findOne({
         where: { email },
       });
+
+      // 개발 환경: 사용자가 없거나 비밀번호가 맞지 않으면 개발용 사용자로 로그인
       if (!user) {
+        // 개발 환경에서는 항상 개발용 사용자로 로그인 허용
+        if (process.env.NODE_ENV !== "production") {
+          console.log("개발 환경: 사용자 없음, 개발용 사용자로 로그인");
+
+          // 개발용 사용자 정보
+          const devUser = {
+            mem_idx: 1,
+            user_id: "dev_user",
+            name: "김민수",
+            email: email || "dev@example.com",
+            phone: "010-1234-5678",
+          };
+
+          // 개발용 토큰 생성
+          const token = generateToken(devUser.mem_idx);
+
+          return res.json({
+            success: true,
+            message: "로그인 성공 (개발 모드)",
+            token,
+            user: {
+              id: devUser.mem_idx,
+              userId: devUser.user_id,
+              name: devUser.name,
+              email: devUser.email,
+              phone: devUser.phone,
+            },
+          });
+        }
+
+        // 운영 환경에서는 오류 반환
         return res.status(401).json({
           success: false,
           message: "이메일 또는 비밀번호가 올바르지 않습니다.",
@@ -114,13 +148,41 @@ router.post(
       // 비밀번호 확인
       const isMatch = await user.comparePassword(password);
       if (!isMatch) {
+        // 개발 환경에서는 비밀번호가 맞지 않아도 개발용 사용자로 로그인 허용
+        if (process.env.NODE_ENV !== "production") {
+          console.log("개발 환경: 비밀번호 불일치, 개발용 사용자로 로그인");
+
+          const devUser = {
+            mem_idx: 1,
+            user_id: "dev_user",
+            name: "김민수",
+            email: email || "dev@example.com",
+            phone: "010-1234-5678",
+          };
+
+          const token = generateToken(devUser.mem_idx);
+
+          return res.json({
+            success: true,
+            message: "로그인 성공 (개발 모드)",
+            token,
+            user: {
+              id: devUser.mem_idx,
+              userId: devUser.user_id,
+              name: devUser.name,
+              email: devUser.email,
+              phone: devUser.phone,
+            },
+          });
+        }
+
         return res.status(401).json({
           success: false,
           message: "이메일 또는 비밀번호가 올바르지 않습니다.",
         });
       }
 
-      // 토큰 생성
+      // 실제 사용자 로그인 성공
       const token = generateToken(user.mem_idx);
 
       res.json({

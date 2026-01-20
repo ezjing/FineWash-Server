@@ -32,6 +32,7 @@ const Vehicle = require("./Vehicle")(sequelize);
 const Reservation = require("./Reservation")(sequelize);
 const Product = require("./Product")(sequelize);
 const WashLocation = require("./WashLocation")(sequelize);
+const FcmToken = require("./FcmToken")(sequelize);
 
 // 관계 설정
 // Member - Vehicle (1:N)
@@ -46,6 +47,10 @@ Reservation.belongsTo(Member, { foreignKey: "mem_idx", as: "member" });
 Vehicle.hasMany(Reservation, { foreignKey: "veh_idx", as: "reservations" });
 Reservation.belongsTo(Vehicle, { foreignKey: "veh_idx", as: "vehicle" });
 
+// Member - FcmToken (1:N)
+Member.hasMany(FcmToken, { foreignKey: "mem_idx", as: "fcmTokens" });
+FcmToken.belongsTo(Member, { foreignKey: "mem_idx", as: "member" });
+
 module.exports = {
   sequelize,
   Sequelize,
@@ -54,4 +59,5 @@ module.exports = {
   Reservation,
   Product,
   WashLocation,
+  FcmToken,
 };
