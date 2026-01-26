@@ -17,6 +17,7 @@ router.get("/", authMiddleware, async (req, res) => {
       success: true,
       vehicles: vehicles.map((v) => ({
         id: v.veh_idx,
+        vehIdx: v.veh_idx,
         vehicleType: v.vehicle_type,
         model: v.model,
         vehicleNumber: v.vehicle_number,
@@ -24,6 +25,8 @@ router.get("/", authMiddleware, async (req, res) => {
         year: v.year,
         remark: v.remark,
         memIdx: v.mem_idx,
+        createdDate: v.created_date ? v.created_date.toISOString() : null,
+        updateDate: v.update_date ? v.update_date.toISOString() : null,
       })),
     });
   } catch (error) {
@@ -40,9 +43,9 @@ router.post(
   "/",
   authMiddleware,
   [
-    body("vehicleNumber")
-      .notEmpty()
-      .withMessage("차량 번호는 필수입니다."),
+    body("vehicle_type").notEmpty().withMessage("차종은 필수입니다."),
+    body("model").notEmpty().withMessage("모델명은 필수입니다."),
+    body("vehicle_number").notEmpty().withMessage("차량 번호는 필수입니다."),
   ],
   async (req, res) => {
     try {
@@ -54,23 +57,32 @@ router.post(
         });
       }
 
-      const {
-        vehicle_type,
-        model,
-        vehicle_number,
-        color,
-        year,
-        remark,
-      } = req.body;
+      const { vehicle_type, model, vehicle_number, color, year, remark } =
+        req.body;
+
+      // 차량 번호 중복 체크 (같은 회원의 차량 중)
+      const existingVehicle = await Vehicle.findOne({
+        where: {
+          mem_idx: req.user.memIdx,
+          vehicle_number: vehicle_number,
+        },
+      });
+
+      if (existingVehicle) {
+        return res.status(400).json({
+          success: false,
+          message: "이미 등록된 차량 번호입니다.",
+        });
+      }
 
       const vehicle = await Vehicle.create({
         mem_idx: req.user.memIdx,
         vehicle_type,
         model,
         vehicle_number,
-        color,
-        year,
-        remark,
+        color: color || null,
+        year: year || null,
+        remark: remark || null,
       });
 
       res.status(201).json({
@@ -78,6 +90,7 @@ router.post(
         message: "차량이 등록되었습니다.",
         vehicle: {
           id: vehicle.veh_idx,
+          vehIdx: vehicle.veh_idx,
           vehicleType: vehicle.vehicle_type,
           model: vehicle.model,
           vehicleNumber: vehicle.vehicle_number,
@@ -85,6 +98,12 @@ router.post(
           year: vehicle.year,
           remark: vehicle.remark,
           memIdx: vehicle.mem_idx,
+          createdDate: vehicle.created_date
+            ? vehicle.created_date.toISOString()
+            : null,
+          updateDate: vehicle.update_date
+            ? vehicle.update_date.toISOString()
+            : null,
         },
       });
     } catch (error) {
@@ -94,20 +113,14 @@ router.post(
         message: "차량 등록 중 오류가 발생했습니다.",
       });
     }
-  }
+  },
 );
 
 // 차량 수정
 router.put("/:id", authMiddleware, async (req, res) => {
   try {
-    const {
-      vehicle_type,
-      model,
-      vehicle_number,
-      color,
-      year,
-      remark,
-    } = req.body;
+    const { vehicle_type, model, vehicle_number, color, year, remark } =
+      req.body;
     const updateData = {};
 
     if (vehicle_type !== undefined) updateData.vehicle_type = vehicle_type;
@@ -136,13 +149,20 @@ router.put("/:id", authMiddleware, async (req, res) => {
       message: "차량 정보가 수정되었습니다.",
       vehicle: {
         id: vehicle.veh_idx,
+        vehIdx: vehicle.veh_idx,
+        memIdx: vehicle.mem_idx,
         vehicleType: vehicle.vehicle_type,
         model: vehicle.model,
         vehicleNumber: vehicle.vehicle_number,
         color: vehicle.color,
         year: vehicle.year,
         remark: vehicle.remark,
-        memIdx: vehicle.mem_idx,
+        createdDate: vehicle.created_date
+          ? vehicle.created_date.toISOString()
+          : null,
+        updateDate: vehicle.update_date
+          ? vehicle.update_date.toISOString()
+          : null,
       },
     });
   } catch (error) {
