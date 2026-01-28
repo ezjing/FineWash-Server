@@ -11,7 +11,7 @@ router.get("/", authMiddleware, async (req, res) => {
     const bookings = await Reservation.findAll({
       where: { mem_idx: req.user.memIdx },
       include: [{ model: Vehicle, as: "vehicle" }],
-      order: [["created_date", "DESC"]],
+      order: [["create_date", "DESC"]],
     });
 
     res.json({
@@ -28,8 +28,8 @@ router.get("/", authMiddleware, async (req, res) => {
         contractYn: b.contract_yn,
         date: b.date,
         time: b.time,
-        createdAt: b.created_date,
-        createdDate: b.created_date,
+        createdAt: b.create_date,
+        createdDate: b.create_date,
         vehicle: b.vehicle
           ? {
               id: b.vehicle.veh_idx,
@@ -78,8 +78,8 @@ router.get("/:id", authMiddleware, async (req, res) => {
         contractYn: booking.contract_yn,
         date: booking.date,
         time: booking.time,
-        createdAt: booking.created_date,
-        createdDate: booking.created_date,
+        createdAt: booking.create_date,
+        createdDate: booking.create_date,
         vehicle: booking.vehicle
           ? {
               id: booking.vehicle.veh_idx,
@@ -188,8 +188,8 @@ router.post(
           contractYn: booking.contract_yn,
           date: booking.date,
           time: booking.time,
-          createdAt: booking.created_date,
-          createdDate: booking.created_date,
+          createdAt: booking.create_date,
+          createdDate: booking.create_date,
         },
       });
     } catch (error) {
@@ -199,7 +199,7 @@ router.post(
         message: "예약 생성 중 오류가 발생했습니다.",
       });
     }
-  }
+  },
 );
 
 // 예약 취소 (contract_yn을 'N'으로 변경)

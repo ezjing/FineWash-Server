@@ -10,7 +10,7 @@ router.get("/", authMiddleware, async (req, res) => {
   try {
     const vehicles = await Vehicle.findAll({
       where: { mem_idx: req.user.memIdx },
-      order: [["created_date", "DESC"]],
+      order: [["create_date", "DESC"]],
     });
 
     res.json({
@@ -25,7 +25,7 @@ router.get("/", authMiddleware, async (req, res) => {
         year: v.year,
         remark: v.remark,
         memIdx: v.mem_idx,
-        createdDate: v.created_date ? v.created_date.toISOString() : null,
+        createdDate: v.create_date ? v.create_date.toISOString() : null,
         updateDate: v.update_date ? v.update_date.toISOString() : null,
       })),
     });
@@ -98,8 +98,8 @@ router.post(
           year: vehicle.year,
           remark: vehicle.remark,
           memIdx: vehicle.mem_idx,
-          createdDate: vehicle.created_date
-            ? vehicle.created_date.toISOString()
+          createdDate: vehicle.create_date
+            ? vehicle.create_date.toISOString()
             : null,
           updateDate: vehicle.update_date
             ? vehicle.update_date.toISOString()
@@ -157,8 +157,8 @@ router.put("/:id", authMiddleware, async (req, res) => {
         color: vehicle.color,
         year: vehicle.year,
         remark: vehicle.remark,
-        createdDate: vehicle.created_date
-          ? vehicle.created_date.toISOString()
+        createdDate: vehicle.create_date
+          ? vehicle.create_date.toISOString()
           : null,
         updateDate: vehicle.update_date
           ? vehicle.update_date.toISOString()

@@ -15,6 +15,7 @@ npm run dev
 ```
 
 서버가 정상 실행되면:
+
 ```
 Server is running on port 3000
 Health check: http://localhost:3000/api/health
@@ -23,13 +24,16 @@ Health check: http://localhost:3000/api/health
 ### 2. Flutter 클라이언트 실행
 
 #### iOS 시뮬레이터 (기본)
+
 ```bash
 cd /Users/ezjing/Desktop/Project/Source/FineWash-Client
 flutter run
 ```
 
 #### Android 에뮬레이터
+
 `lib/services/api_service.dart` 파일 수정:
+
 ```dart
 static const String baseUrl = 'http://10.0.2.2:3000/api';
 ```
@@ -77,11 +81,13 @@ static const String baseUrl = 'http://10.0.2.2:3000/api';
 ## 🔍 API 테스트 (cURL)
 
 ### 1. 서버 상태 확인
+
 ```bash
 curl http://localhost:3000/api/health
 ```
 
 ### 2. 결제 검증 API 테스트
+
 ```bash
 curl -X POST http://localhost:3000/api/payments/verify \
   -H "Content-Type: application/json" \
@@ -93,6 +99,7 @@ curl -X POST http://localhost:3000/api/payments/verify \
 ```
 
 예상 응답:
+
 ```json
 {
   "success": true,
@@ -107,6 +114,7 @@ curl -X POST http://localhost:3000/api/payments/verify \
 ```
 
 ### 3. 예약 목록 조회 (인증 필요)
+
 ```bash
 # 먼저 로그인하여 토큰 획득
 curl -X POST http://localhost:3000/api/auth/login \
@@ -126,10 +134,11 @@ curl http://localhost:3000/api/reservations \
 ### 서버가 시작되지 않는 경우
 
 1. **포트 충돌**
+
    ```bash
    # 포트 3000 사용 중인 프로세스 확인
    lsof -i :3000
-   
+
    # 프로세스 종료
    kill -9 PID
    ```
@@ -165,8 +174,9 @@ curl http://localhost:3000/api/reservations \
 ## 📊 데이터베이스 확인
 
 ### 예약 데이터 확인
+
 ```sql
-SELECT 
+SELECT
   resv_idx,
   mem_idx,
   veh_idx,
@@ -178,14 +188,15 @@ SELECT
   date,
   time,
   contract_yn,
-  created_date
+  create_date
 FROM reservations
-ORDER BY created_date DESC;
+ORDER BY create_date DESC;
 ```
 
 ### 결제 정보가 저장되었는지 확인
+
 ```sql
-SELECT 
+SELECT
   resv_idx,
   imp_uid,
   merchant_uid,

@@ -9,6 +9,7 @@ module.exports = (sequelize) => {
         primaryKey: true,
         autoIncrement: true,
         field: "veh_idx",
+        comment: "차량 인덱스",
       },
       mem_idx: {
         type: DataTypes.INTEGER,
@@ -56,31 +57,35 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING(50),
         allowNull: true,
         field: "create_id",
+        comment: "생성자",
       },
       create_date: {
         type: DataTypes.DATE,
         allowNull: true,
         field: "create_date",
         defaultValue: DataTypes.NOW,
+        comment: "생성일",
       },
       update_id: {
         type: DataTypes.STRING(50),
         allowNull: true,
         field: "update_id",
+        comment: "수정자",
       },
       update_date: {
         type: DataTypes.DATE,
         allowNull: true,
         field: "update_date",
         defaultValue: DataTypes.NOW,
+        comment: "수정일",
       },
     },
     {
       tableName: "vehicles",
       timestamps: true,
-      createdAt: "created_date",
+      createdAt: "create_date",
       updatedAt: "update_date",
-    }
+    },
   );
 
   return Vehicle;

@@ -10,31 +10,37 @@ module.exports = (sequelize) => {
         primaryKey: true,
         autoIncrement: true,
         field: "mem_idx",
+        comment: "회원 인덱스",
       },
       bus_mst_idx: {
         type: DataTypes.INTEGER,
         allowNull: true,
         field: "bus_mst_idx",
+        comment: "사업장 MST 인덱스",
       },
       password: {
         type: DataTypes.STRING(255),
         allowNull: true,
         field: "password",
+        comment: "비밀번호",
       },
       name: {
         type: DataTypes.STRING(100),
         allowNull: true,
         field: "name",
+        comment: "이름",
       },
       address: {
         type: DataTypes.STRING(500),
         allowNull: true,
         field: "address",
+        comment: "주소",
       },
       phone: {
         type: DataTypes.STRING(20),
         allowNull: true,
         field: "phone",
+        comment: "전화번호",
       },
       gender: {
         type: DataTypes.CHAR(1),
@@ -46,44 +52,51 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING(255),
         allowNull: true,
         field: "email",
+        comment: "이메일",
       },
       social_type: {
         type: DataTypes.STRING(20),
         allowNull: true,
         field: "social_type",
+        comment: "소셜 유형",
       },
       social_id: {
         type: DataTypes.STRING(255),
         allowNull: true,
         field: "social_id",
+        comment: "소셜 아이디",
       },
       member_type: {
         type: DataTypes.STRING(20),
         allowNull: true,
         field: "member_type",
-        comment: "회원 유형 (U: 일반, B: 사업자, A: 관리자)",
+        comment: "회원 유형 (C: 고객, B: 사업자, A: 관리자)",
       },
       create_id: {
         type: DataTypes.STRING(50),
         allowNull: true,
         field: "create_id",
+        comment: "생성자",
       },
       create_date: {
         type: DataTypes.DATE,
         allowNull: true,
         field: "create_date",
         defaultValue: DataTypes.NOW,
+        comment: "생성일",
       },
       update_id: {
         type: DataTypes.STRING(50),
         allowNull: true,
         field: "update_id",
+        comment: "수정자",
       },
       update_date: {
         type: DataTypes.DATE,
         allowNull: true,
         field: "update_date",
         defaultValue: DataTypes.NOW,
+        comment: "수정일",
       },
     },
     {
@@ -114,7 +127,7 @@ module.exports = (sequelize) => {
           attributes: { include: ["password"] },
         },
       },
-    }
+    },
   );
 
   // 비밀번호 검증 메서드

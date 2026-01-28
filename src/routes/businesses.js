@@ -15,7 +15,7 @@ router.get("/", async (req, res) => {
           required: false,
         },
       ],
-      order: [["created_date", "DESC"]],
+      order: [["create_date", "DESC"]],
     });
 
     res.json({
@@ -44,7 +44,7 @@ router.get("/", async (req, res) => {
               endDate: bd.end_date,
             }))
           : [],
-        createdAt: b.created_date,
+        createdAt: b.create_date,
       })),
     });
   } catch (error) {
@@ -103,7 +103,7 @@ router.get("/:id", async (req, res) => {
               endDate: bd.end_date,
             }))
           : [],
-        createdAt: business.created_date,
+        createdAt: business.create_date,
         updatedAt: business.update_date,
       },
     });
