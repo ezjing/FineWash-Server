@@ -79,7 +79,7 @@ router.post(
         message: "회원가입 중 오류가 발생했습니다.",
       });
     }
-  }
+  },
 );
 
 // 로그인
@@ -190,11 +190,18 @@ router.post(
         message: "로그인 성공",
         token,
         user: {
-          id: user.mem_idx,
-          userId: user.user_id,
+          memIdx: user.mem_idx,
+          busMstIdx: user.bus_mst_idx,
           name: user.name,
           email: user.email,
           phone: user.phone,
+          address: user.address,
+          gender: user.gender,
+          socialType: user.social_type,
+          socialId: user.social_id,
+          memberType: user.member_type,
+          createdDate: user.create_date,
+          updatedDate: user.update_date,
         },
       });
     } catch (error) {
@@ -204,7 +211,7 @@ router.post(
         message: "로그인 중 오류가 발생했습니다.",
       });
     }
-  }
+  },
 );
 
 // 현재 사용자 정보 조회
@@ -221,14 +228,18 @@ router.get("/me", authMiddleware, async (req, res) => {
     res.json({
       success: true,
       user: {
-        id: user.mem_idx,
-        userId: user.user_id,
+        memIdx: user.mem_idx,
+        busMstIdx: user.bus_mst_idx,
         name: user.name,
         email: user.email,
         phone: user.phone,
         address: user.address,
         gender: user.gender,
-        createdAt: user.created_date,
+        socialType: user.social_type,
+        socialId: user.social_id,
+        memberType: user.member_type,
+        createdDate: user.create_date,
+        updatedDate: user.update_date,
       },
     });
   } catch (error) {
