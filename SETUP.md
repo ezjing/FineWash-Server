@@ -13,12 +13,8 @@ npm install
 # 환경 변수 파일 생성 (없는 경우)
 cp .env.development .env
 
-# .env 파일 수정 (MySQL 설정 등)
-# DB_HOST=localhost
-# DB_PORT=3306
-# DB_NAME=finewash_dev
-# DB_USER=root
-# DB_PASSWORD=your_password
+# .env 파일 수정 (필요 시 SQLite 경로만 설정)
+# DB_PATH=./database.sqlite
 
 # 서버 실행
 npm run dev
@@ -146,6 +142,6 @@ const response = await axios.get(
 
 ## 📝 다음 단계
 
-1. MySQL 데이터베이스 설정
+1. SQLite DB 파일은 서버 최초 실행 시 자동 생성됨 (database.sqlite)
 2. 포트원 실제 API 키 설정 (운영 환경)
 3. 결제 검증 로직 강화 (포트원 REST API 연동)

@@ -13,7 +13,7 @@ FineWash-Server/
 │   ├── controllers/          # 컨트롤러 (비즈니스 로직)
 │   ├── middleware/           # 미들웨어
 │   │   └── auth.js           # JWT 인증 미들웨어
-│   ├── models/               # MongoDB 모델
+│   ├── models/               # Sequelize 모델 (SQLite)
 │   │   ├── Booking.js        # 예약
 │   │   ├── Product.js        # 상품
 │   │   ├── User.js           # 사용자
@@ -90,12 +90,8 @@ npm start
 PORT=3000
 NODE_ENV=development
 
-# MySQL 데이터베이스 설정
-DB_HOST=localhost
-DB_PORT=3306
-DB_NAME=finewash_dev
-DB_USER=root
-DB_PASSWORD=your_password_here
+# SQLite 데이터베이스 (선택, 미설정 시 프로젝트 루트에 database.sqlite 생성)
+# DB_PATH=./database.sqlite
 
 # JWT 설정
 JWT_SECRET=dev-secret-key-for-local-development-only
@@ -113,12 +109,8 @@ CORS_ORIGIN=*
 PORT=3000
 NODE_ENV=production
 
-# MySQL 데이터베이스 설정
-DB_HOST=your-production-db-host
-DB_PORT=3306
-DB_NAME=finewash_prod
-DB_USER=your_db_user
-DB_PASSWORD=your_secure_password  # ⚠️ 반드시 변경!
+# SQLite 데이터베이스 (선택)
+# DB_PATH=./database.sqlite
 
 # JWT 설정
 JWT_SECRET=CHANGE_THIS_TO_SECURE_RANDOM_STRING  # ⚠️ 반드시 변경!
@@ -185,7 +177,7 @@ CORS_ORIGIN=https://your-app-domain.com
 ## 🛠 기술 스택
 
 - **Express.js** - 웹 프레임워크
-- **MySQL + Sequelize** - 데이터베이스
+- **SQLite + Sequelize** - 데이터베이스 (운영 시 MySQL 사용 가능, `src/models/index.js` 주석 참고)
 - **JWT (jsonwebtoken)** - 인증
 - **bcryptjs** - 비밀번호 암호화
 - **express-validator** - 입력 검증
@@ -198,7 +190,8 @@ CORS_ORIGIN=https://your-app-domain.com
 ## ⚠️ 운영 배포 전 체크리스트
 
 - [ ] `JWT_SECRET`: 최소 32자 이상 랜덤 문자열로 변경
-- [ ] `MONGODB_URI`: 실제 운영 DB 주소로 변경
+- [ ] `DB_PATH`: 운영 환경에서 SQLite 파일 경로 설정 (SQLite 사용 시)
+- [ ] MySQL 사용 시: `src/models/index.js`에서 MySQL 블록 주석 해제 후 `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` 등 설정
 - [ ] `CORS_ORIGIN`: 실제 앱 도메인으로 변경
 
 ---

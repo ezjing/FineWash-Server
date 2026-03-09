@@ -26,3 +26,11 @@ Thumbs.db
 dist/
 build/
 
+# SQLite database file
+*.sqlite
+*.sqlite3
+*.db
+*.db3
+database.sqlite
+fineWash.db
+fineWash.db

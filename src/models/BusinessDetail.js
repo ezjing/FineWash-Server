@@ -23,11 +23,11 @@ module.exports = (sequelize) => {
         field: "room_name",
         comment: "룸 이름",
       },
-      inactive_yn: {
+      active_yn: {
         type: DataTypes.CHAR(1),
-        defaultValue: "N",
-        field: "inactive_yn",
-        comment: "비활성화 YN",
+        defaultValue: "Y",
+        field: "active_yn",
+        comment: "활성화 YN",
       },
       start_date: {
         type: DataTypes.DATEONLY,

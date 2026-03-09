@@ -143,10 +143,9 @@ curl http://localhost:3000/api/reservations \
    kill -9 PID
    ```
 
-2. **MySQL 연결 오류**
-   - `.env` 파일의 DB 설정 확인
-   - MySQL 서버가 실행 중인지 확인
-   - 데이터베이스가 생성되어 있는지 확인
+2. **SQLite 연결 오류**
+   - `DB_PATH`가 지정된 경우 해당 경로에 쓰기 권한이 있는지 확인
+   - 프로젝트 루트 또는 지정 경로에 `database.sqlite` 파일이 생성되는지 확인
 
 ### 클라이언트에서 서버 연결 실패
 

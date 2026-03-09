@@ -1,30 +1,45 @@
+const path = require("path");
 const { Sequelize } = require("sequelize");
 
-// Sequelize 인스턴스 생성
-const sequelize = new Sequelize(
-  process.env.DB_NAME,
-  process.env.DB_USER,
-  process.env.DB_PASSWORD,
-  {
-    host: process.env.DB_HOST,
-    port: process.env.DB_PORT || 3306,
-    dialect: "mysql",
-    logging: process.env.NODE_ENV === "development" ? console.log : false,
-    timezone: "+09:00", // 한국 시간
-    define: {
-      charset: "utf8mb4",
-      collate: "utf8mb4_unicode_ci",
-      timestamps: true,
-      underscored: false, // camelCase 필드명 사용 (DB는 snake_case)
-    },
-    pool: {
-      max: 10,
-      min: 0,
-      acquire: 30000,
-      idle: 10000,
-    },
-  }
-);
+// ----- SQLite (개발/기본) -----
+const dbPath =
+  process.env.DB_PATH || path.join(__dirname, "..", "..", "fineWash.db");
+
+const sequelize = new Sequelize({
+  dialect: "sqlite",
+  storage: dbPath,
+  logging: process.env.NODE_ENV === "development" ? console.log : false,
+  define: {
+    timestamps: true,
+    underscored: false,
+  },
+});
+
+// ----- MySQL (운영 시 사용: 아래 주석 해제 후 위 SQLite 블록 주석 처리, package.json에 mysql2 필요) -----
+// const sequelize = new Sequelize(
+//   process.env.DB_NAME,
+//   process.env.DB_USER,
+//   process.env.DB_PASSWORD,
+//   {
+//     host: process.env.DB_HOST,
+//     port: process.env.DB_PORT || 3306,
+//     dialect: "mysql",
+//     logging: process.env.NODE_ENV === "development" ? console.log : false,
+//     timezone: "+09:00",
+//     define: {
+//       charset: "utf8mb4",
+//       collate: "utf8mb4_unicode_ci",
+//       timestamps: true,
+//       underscored: false,
+//     },
+//     pool: {
+//       max: 10,
+//       min: 0,
+//       acquire: 30000,
+//       idle: 10000,
+//     },
+//   }
+// );
 
 // 모델 import
 const Member = require("./Member")(sequelize);
@@ -59,40 +74,91 @@ Member.hasMany(FcmToken, { foreignKey: "mem_idx", as: "fcmTokens" });
 FcmToken.belongsTo(Member, { foreignKey: "mem_idx", as: "member" });
 
 // Member - BusinessMaster (1:N)
-Member.hasMany(BusinessMaster, { foreignKey: "mem_idx", as: "businessMasters" });
+Member.hasMany(BusinessMaster, {
+  foreignKey: "mem_idx",
+  as: "businessMasters",
+});
 BusinessMaster.belongsTo(Member, { foreignKey: "mem_idx", as: "member" });
 
 // BusinessMaster - BusinessDetail (1:N)
-BusinessMaster.hasMany(BusinessDetail, { foreignKey: "bus_mst_idx", as: "businessDetails" });
-BusinessDetail.belongsTo(BusinessMaster, { foreignKey: "bus_mst_idx", as: "businessMaster" });
+BusinessMaster.hasMany(BusinessDetail, {
+  foreignKey: "bus_mst_idx",
+  as: "businessDetails",
+});
+BusinessDetail.belongsTo(BusinessMaster, {
+  foreignKey: "bus_mst_idx",
+  as: "businessMaster",
+});
 
 // Reservation - ReservationSchedule (1:1)
-Reservation.hasOne(ReservationSchedule, { foreignKey: "resv_idx", as: "reservationSchedule" });
-ReservationSchedule.belongsTo(Reservation, { foreignKey: "resv_idx", as: "reservation" });
+Reservation.hasOne(ReservationSchedule, {
+  foreignKey: "resv_idx",
+  as: "reservationSchedule",
+});
+ReservationSchedule.belongsTo(Reservation, {
+  foreignKey: "resv_idx",
+  as: "reservation",
+});
 
 // BusinessDetail - Reservation (1:N)
-BusinessDetail.hasMany(Reservation, { foreignKey: "bus_dtl_idx", as: "reservations" });
-Reservation.belongsTo(BusinessDetail, { foreignKey: "bus_dtl_idx", as: "businessDetail" });
+BusinessDetail.hasMany(Reservation, {
+  foreignKey: "bus_dtl_idx",
+  as: "reservations",
+});
+Reservation.belongsTo(BusinessDetail, {
+  foreignKey: "bus_dtl_idx",
+  as: "businessDetail",
+});
 
 // BusinessDetail - ScheduleMaster (1:N)
-BusinessDetail.hasMany(ScheduleMaster, { foreignKey: "bus_dtl_idx", as: "scheduleMasters" });
-ScheduleMaster.belongsTo(BusinessDetail, { foreignKey: "bus_dtl_idx", as: "businessDetail" });
+BusinessDetail.hasMany(ScheduleMaster, {
+  foreignKey: "bus_dtl_idx",
+  as: "scheduleMasters",
+});
+ScheduleMaster.belongsTo(BusinessDetail, {
+  foreignKey: "bus_dtl_idx",
+  as: "businessDetail",
+});
 
 // ScheduleMaster - ScheduleDetail (1:N)
-ScheduleMaster.hasMany(ScheduleDetail, { foreignKey: "sch_mst_idx", as: "scheduleDetails" });
-ScheduleDetail.belongsTo(ScheduleMaster, { foreignKey: "sch_mst_idx", as: "scheduleMaster" });
+ScheduleMaster.hasMany(ScheduleDetail, {
+  foreignKey: "sch_mst_idx",
+  as: "scheduleDetails",
+});
+ScheduleDetail.belongsTo(ScheduleMaster, {
+  foreignKey: "sch_mst_idx",
+  as: "scheduleMaster",
+});
 
 // BusinessDetail - ScheduleDetail (1:N)
-BusinessDetail.hasMany(ScheduleDetail, { foreignKey: "bus_dtl_idx", as: "scheduleDetails" });
-ScheduleDetail.belongsTo(BusinessDetail, { foreignKey: "bus_dtl_idx", as: "businessDetail" });
+BusinessDetail.hasMany(ScheduleDetail, {
+  foreignKey: "bus_dtl_idx",
+  as: "scheduleDetails",
+});
+ScheduleDetail.belongsTo(BusinessDetail, {
+  foreignKey: "bus_dtl_idx",
+  as: "businessDetail",
+});
 
 // BusinessMaster - WashOptionMaster (1:N)
-BusinessMaster.hasMany(WashOptionMaster, { foreignKey: "bus_mst_idx", as: "washOptionMasters" });
-WashOptionMaster.belongsTo(BusinessMaster, { foreignKey: "bus_mst_idx", as: "businessMaster" });
+BusinessMaster.hasMany(WashOptionMaster, {
+  foreignKey: "bus_mst_idx",
+  as: "washOptionMasters",
+});
+WashOptionMaster.belongsTo(BusinessMaster, {
+  foreignKey: "bus_mst_idx",
+  as: "businessMaster",
+});
 
 // WashOptionMaster - WashOptionDetail (1:N)
-WashOptionMaster.hasMany(WashOptionDetail, { foreignKey: "wopt_mst_idx", as: "washOptionDetails" });
-WashOptionDetail.belongsTo(WashOptionMaster, { foreignKey: "wopt_mst_idx", as: "washOptionMaster" });
+WashOptionMaster.hasMany(WashOptionDetail, {
+  foreignKey: "wopt_mst_idx",
+  as: "washOptionDetails",
+});
+WashOptionDetail.belongsTo(WashOptionMaster, {
+  foreignKey: "wopt_mst_idx",
+  as: "washOptionMaster",
+});
 
 module.exports = {
   sequelize,

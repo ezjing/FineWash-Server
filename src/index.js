@@ -57,12 +57,11 @@ app.use((req, res) => {
 
 const PORT = process.env.PORT || 3000;
 
-// Connect to MySQL and start server
+// Connect to database and start server
 const startServer = async () => {
   try {
-    // MySQL 연결 테스트
     await sequelize.authenticate();
-    console.log("MySQL connected successfully");
+    console.log("Database connected successfully");
 
     // 개발 환경에서 테이블 동기화 (alter: true는 기존 데이터 유지)
     if (process.env.NODE_ENV === "development") {
@@ -75,11 +74,11 @@ const startServer = async () => {
       console.log(`Health check: http://localhost:${PORT}/api/health`);
     });
   } catch (error) {
-    console.error("Failed to connect to MySQL:", error.message);
+    console.error("Failed to connect to database:", error.message);
     console.log("Starting server without database connection...");
 
     app.listen(PORT, () => {
-      console.log(`Server is running on port ${PORT} (without MySQL)`);
+      console.log(`Server is running on port ${PORT} (without database)`);
     });
   }
 };
