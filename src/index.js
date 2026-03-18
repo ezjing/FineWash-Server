@@ -16,6 +16,7 @@ const reservationRoutes = require("./routes/reservations");
 const productRoutes = require("./routes/products");
 const businessRoutes = require("./routes/businesses");
 const paymentRoutes = require("./routes/payments");
+const washOptionRoutes = require("./routes/washOption");
 
 const app = express();
 
@@ -31,6 +32,7 @@ app.use("/api/reservations", reservationRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/businesses", businessRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/wash-options", washOptionRoutes);
 
 // Health check endpoint
 app.get("/api/health", (req, res) => {

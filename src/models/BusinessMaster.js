@@ -51,7 +51,7 @@ module.exports = (sequelize) => {
         type: DataTypes.STRING(20),
         allowNull: true,
         field: "business_type",
-        comment: "개인/법인",
+        comment: "사업장 종류(출장: OUT, 제휴: PARTNER)",
       },
       deposit_yn: {
         type: DataTypes.CHAR(1),
