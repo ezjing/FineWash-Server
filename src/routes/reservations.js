@@ -1,103 +1,15 @@
 const express = require("express");
 const { body, validationResult } = require("express-validator");
-const { Reservation, Vehicle } = require("../models");
-const authMiddleware = require("../middleware/auth");
+const authMiddleware = require("../middlewares/auth");
+const ReservationController = require("../controllers/reservation_controller");
 
 const router = express.Router();
 
 // 예약 목록 조회 (SearchLogic1)
-router.get("/", authMiddleware, async (req, res) => {
-  try {
-    const bookings = await Reservation.findAll({
-      where: { mem_idx: req.user.memIdx },
-      include: [{ model: Vehicle, as: "vehicle" }],
-      order: [["create_date", "DESC"]],
-    });
-
-    res.json({
-      success: true,
-      reservations: bookings.map((b) => ({
-        id: b.resv_idx,
-        resvIdx: b.resv_idx,
-        mainOption: b.main_option,
-        midOption: b.mid_option,
-        subOption: b.sub_option,
-        vehicleId: b.veh_idx,
-        vehIdx: b.veh_idx,
-        vehicleLocation: b.vehicle_location,
-        contractYn: b.contract_yn,
-        date: b.date,
-        time: b.time,
-        createdAt: b.create_date,
-        createdDate: b.create_date,
-        vehicle: b.vehicle
-          ? {
-              id: b.vehicle.veh_idx,
-              vehicleType: b.vehicle.vehicle_type,
-              model: b.vehicle.model,
-              vehicleNumber: b.vehicle.vehicle_number,
-            }
-          : null,
-      })),
-    });
-  } catch (error) {
-    console.error("Get bookings error:", error);
-    res.status(500).json({
-      success: false,
-      message: "예약 목록 조회 중 오류가 발생했습니다.",
-    });
-  }
-});
+router.get("/", authMiddleware, ReservationController.SearchLogic1);
 
 // 예약 상세 조회
-router.get("/:id", authMiddleware, async (req, res) => {
-  try {
-    const booking = await Reservation.findOne({
-      where: { resv_idx: req.params.id, mem_idx: req.user.memIdx },
-      include: [{ model: Vehicle, as: "vehicle" }],
-    });
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: "예약을 찾을 수 없습니다.",
-      });
-    }
-
-    res.json({
-      success: true,
-      reservation: {
-        id: booking.resv_idx,
-        resvIdx: booking.resv_idx,
-        mainOption: booking.main_option,
-        midOption: booking.mid_option,
-        subOption: booking.sub_option,
-        vehicleId: booking.veh_idx,
-        vehIdx: booking.veh_idx,
-        vehicleLocation: booking.vehicle_location,
-        contractYn: booking.contract_yn,
-        date: booking.date,
-        time: booking.time,
-        createdAt: booking.create_date,
-        createdDate: booking.create_date,
-        vehicle: booking.vehicle
-          ? {
-              id: booking.vehicle.veh_idx,
-              vehicleType: booking.vehicle.vehicle_type,
-              model: booking.vehicle.model,
-              vehicleNumber: booking.vehicle.vehicle_number,
-            }
-          : null,
-      },
-    });
-  } catch (error) {
-    console.error("Get booking error:", error);
-    res.status(500).json({
-      success: false,
-      message: "예약 조회 중 오류가 발생했습니다.",
-    });
-  }
-});
+router.get("/:id", authMiddleware, ReservationController.SearchLogic2);
 
 // 예약 생성 (SaveLogic1 - 출장세차, SaveLogic2 - 제휴세차장)
 router.post(
@@ -110,138 +22,18 @@ router.post(
     body("time").notEmpty().withMessage("시간을 선택해주세요."),
   ],
   async (req, res) => {
-    try {
-      const errors = validationResult(req);
-      if (!errors.isEmpty()) {
-        return res.status(400).json({
-          success: false,
-          message: errors.array()[0].msg,
-        });
-      }
-
-      const {
-        vehicleId,
-        main_option,
-        mid_option,
-        sub_option,
-        vehicle_location,
-        date,
-        time,
-        bus_dtl_idx,
-        imp_uid,
-        merchant_uid,
-        payment_amount,
-      } = req.body;
-
-      // 로그인한 유저 ID (create_id, update_id에 사용)
-      const userId = req.user.memIdx?.toString() || req.user.userId || "system";
-
-      console.log("예약 생성 요청 데이터:", {
-        mem_idx: req.user.memIdx,
-        veh_idx: vehicleId,
-        bus_dtl_idx: bus_dtl_idx || null,
-        main_option: main_option,
-        mid_option: mid_option || null,
-        sub_option: sub_option || null,
-        vehicle_location: vehicle_location || null,
-        date,
-        time,
-        imp_uid: imp_uid || null,
-        merchant_uid: merchant_uid || null,
-        payment_amount: payment_amount || null,
-        create_id: userId,
-        update_id: userId,
-      });
-
-      const booking = await Reservation.create({
-        mem_idx: req.user.memIdx,
-        veh_idx: vehicleId,
-        bus_dtl_idx: bus_dtl_idx || null,
-        main_option: main_option,
-        mid_option: mid_option || null,
-        sub_option: sub_option || null,
-        vehicle_location: vehicle_location || null,
-        date,
-        time,
-        contract_yn: "Y", // 기본값 승낙
-        imp_uid: imp_uid || null,
-        merchant_uid: merchant_uid || null,
-        payment_amount: payment_amount || null,
-        create_id: userId, // 로그인한 유저 ID
-        update_id: userId, // 로그인한 유저 ID
-      });
-
-      console.log("예약 생성 성공:", booking.resv_idx);
-
-      res.status(201).json({
-        success: true,
-        message: "예약이 완료되었습니다.",
-        reservation: {
-          id: booking.resv_idx,
-          resvIdx: booking.resv_idx,
-          mainOption: booking.main_option,
-          midOption: booking.mid_option,
-          subOption: booking.sub_option,
-          vehicleId: booking.veh_idx,
-          vehIdx: booking.veh_idx,
-          vehicleLocation: booking.vehicle_location,
-          contractYn: booking.contract_yn,
-          date: booking.date,
-          time: booking.time,
-          createdAt: booking.create_date,
-          createdDate: booking.create_date,
-        },
-      });
-    } catch (error) {
-      console.error("Create booking error:", error);
-      res.status(500).json({
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.status(400).json({
         success: false,
-        message: "예약 생성 중 오류가 발생했습니다.",
+        message: errors.array()[0].msg,
       });
     }
+    return await ReservationController.SaveLogic1(req, res);
   },
 );
 
 // 예약 취소 (contract_yn을 'N'으로 변경)
-router.put("/:id/cancel", authMiddleware, async (req, res) => {
-  try {
-    const booking = await Reservation.findOne({
-      where: { resv_idx: req.params.id, mem_idx: req.user.memIdx },
-    });
-
-    if (!booking) {
-      return res.status(404).json({
-        success: false,
-        message: "예약을 찾을 수 없습니다.",
-      });
-    }
-
-    if (booking.contract_yn === "N") {
-      return res.status(400).json({
-        success: false,
-        message: "이미 취소된 예약입니다.",
-      });
-    }
-
-    booking.contract_yn = "N";
-    await booking.save();
-
-    res.json({
-      success: true,
-      message: "예약이 취소되었습니다.",
-      reservation: {
-        id: booking.resv_idx,
-        resvIdx: booking.resv_idx,
-        contractYn: booking.contract_yn,
-      },
-    });
-  } catch (error) {
-    console.error("Cancel booking error:", error);
-    res.status(500).json({
-      success: false,
-      message: "예약 취소 중 오류가 발생했습니다.",
-    });
-  }
-});
+router.put("/:id/cancel", authMiddleware, ReservationController.SaveLogic2);
 
 module.exports = router;
