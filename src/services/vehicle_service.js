@@ -1,4 +1,6 @@
 const { Vehicle } = require("../models");
+const { AppError } = require("../utils/app_error");
+const CODES = require("../utils/error_codes");
 
 const SearchLogic1 = async (memIdx) => {
   return await Vehicle.findAll({
@@ -17,9 +19,11 @@ const SaveLogic1 = async (memIdx, body) => {
     },
   });
   if (existingVehicle) {
-    const err = new Error("DUPLICATE_VEHICLE_NUMBER");
-    err.statusCode = 400;
-    throw err;
+    throw new AppError(
+      CODES.VEHICLE.DUPLICATE_VEHICLE_NUMBER.code,
+      CODES.VEHICLE.DUPLICATE_VEHICLE_NUMBER.status,
+      CODES.VEHICLE.DUPLICATE_VEHICLE_NUMBER.message,
+    );
   }
 
   return await Vehicle.create({
@@ -48,9 +52,11 @@ const SaveLogic2 = async (memIdx, vehIdx, body) => {
     where: { veh_idx: vehIdx, mem_idx: memIdx },
   });
   if (updatedCount === 0) {
-    const err = new Error("NOT_FOUND_VEHICLE");
-    err.statusCode = 404;
-    throw err;
+    throw new AppError(
+      CODES.VEHICLE.NOT_FOUND_VEHICLE.code,
+      CODES.VEHICLE.NOT_FOUND_VEHICLE.status,
+      CODES.VEHICLE.NOT_FOUND_VEHICLE.message,
+    );
   }
 
   return await Vehicle.findByPk(vehIdx);
@@ -61,9 +67,11 @@ const SaveLogic3 = async (memIdx, vehIdx) => {
     where: { veh_idx: vehIdx, mem_idx: memIdx },
   });
   if (deletedCount === 0) {
-    const err = new Error("NOT_FOUND_VEHICLE");
-    err.statusCode = 404;
-    throw err;
+    throw new AppError(
+      CODES.VEHICLE.NOT_FOUND_VEHICLE.code,
+      CODES.VEHICLE.NOT_FOUND_VEHICLE.status,
+      CODES.VEHICLE.NOT_FOUND_VEHICLE.message,
+    );
   }
   return true;
 };

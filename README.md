@@ -9,23 +9,15 @@
 ```
 FineWash-Server/
 ├── src/
-│   ├── index.js              # 서버 진입점
-│   ├── controllers/          # 컨트롤러 (비즈니스 로직)
-│   ├── middleware/           # 미들웨어
-│   │   └── auth.js           # JWT 인증 미들웨어
-│   ├── models/               # Sequelize 모델 (SQLite)
-│   │   ├── Booking.js        # 예약
-│   │   ├── Product.js        # 상품
-│   │   ├── User.js           # 사용자
-│   │   ├── Vehicle.js        # 차량
-│   │   └── WashLocation.js   # 세차 위치
-│   └── routes/               # API 라우트
-│       ├── auth.js           # 인증 API
-│       ├── bookings.js       # 예약 API
-│       ├── locations.js      # 위치 API
-│       ├── products.js       # 상품 API
-│       ├── users.js          # 사용자 API
-│       └── vehicles.js       # 차량 API
+│   ├── app.js                # Express 앱 생성/라우팅 wiring
+│   ├── server.js             # 서버 실행 + DB 연결
+│   ├── config/              # DB/환경 설정 모듈
+│   ├── controllers/         # 컨트롤러 (요청/응답 처리)
+│   ├── services/            # 서비스(비즈니스 로직 + DB 호출)
+│   ├── models/              # Sequelize 모델/association
+│   ├── routes/              # API 라우트 (URL → Controller 연결)
+│   ├── middlewares/         # 인증/에러 공통 미들웨어
+│   └── utils/               # 공통 유틸
 ├── .env                      # 환경 설정 (현재 사용)
 ├── .env.development          # 개발 환경 설정
 ├── .env.production           # 운영 환경 설정
@@ -133,15 +125,13 @@ CORS_ORIGIN=https://your-app-domain.com
 | POST   | `/api/auth/login`  | 로그인           |
 | GET    | `/api/auth/me`     | 현재 사용자 정보 |
 
-### 사용자 (Users)
-
+### 사용자 (Members)
 | 메소드 | 경로                  | 설명          |
 | ------ | --------------------- | ------------- |
-| PUT    | `/api/users/profile`  | 프로필 수정   |
-| PUT    | `/api/users/password` | 비밀번호 변경 |
+| PUT    | `/api/members/profile`  | 프로필 수정   |
+| PUT    | `/api/members/password` | 비밀번호 변경 |
 
 ### 차량 (Vehicles)
-
 | 메소드 | 경로                | 설명           |
 | ------ | ------------------- | -------------- |
 | GET    | `/api/vehicles`     | 차량 목록 조회 |
@@ -149,28 +139,47 @@ CORS_ORIGIN=https://your-app-domain.com
 | PUT    | `/api/vehicles/:id` | 차량 수정      |
 | DELETE | `/api/vehicles/:id` | 차량 삭제      |
 
-### 예약 (Bookings)
-
+### 예약 (Reservations)
 | 메소드 | 경로                       | 설명           |
 | ------ | -------------------------- | -------------- |
-| GET    | `/api/bookings`            | 예약 목록 조회 |
-| GET    | `/api/bookings/:id`        | 예약 상세 조회 |
-| POST   | `/api/bookings`            | 예약 생성      |
-| PUT    | `/api/bookings/:id/cancel` | 예약 취소      |
+| GET    | `/api/reservations`       | 예약 목록 조회 |
+| GET    | `/api/reservations/:id`  | 예약 상세 조회 |
+| POST   | `/api/reservations`       | 예약 생성      |
+| PUT    | `/api/reservations/:id/cancel` | 예약 취소 |
 
 ### 상품 (Products)
+| 메소드 | 경로                       | 설명 |
+| ------ | -------------------------- | ---- |
+| GET    | `/api/products`           | 상품 목록 |
+| GET    | `/api/products/:id`      | 상품 상세 |
+| GET    | `/api/products/category/:category` | 카테고리별 상품 |
 
-| 메소드 | 경로                | 설명      |
-| ------ | ------------------- | --------- |
-| GET    | `/api/products`     | 상품 목록 |
-| GET    | `/api/products/:id` | 상품 상세 |
+### 사업장/룸 (Businesses)
+| 메소드 | 경로                         | 설명 |
+| ------ | ---------------------------- | ---- |
+| POST   | `/api/businesses`            | 사업장 등록(MST) |
+| PUT    | `/api/businesses/:busMstIdx` | 사업장 수정(MST) |
+| GET    | `/api/businesses`           | 사업장 목록(MST) |
+| GET    | `/api/businesses/:id`       | 사업장 상세(MST + DTL) |
+| GET    | `/api/businesses/rooms/:busDtlIdx` | 룸 상세(DTL + 예약) |
+| POST   | `/api/businesses/rooms`    | 룸 추가(DTL) |
+| PUT    | `/api/businesses/rooms/:busDtlIdx` | 룸 수정(DTL) |
+| DELETE | `/api/businesses/rooms/:busDtlIdx` | 룸 삭제(DTL) |
 
-### 세차 위치 (Locations)
+### 결제 검증 (Payments)
+| 메소드 | 경로                  | 설명 |
+| ------ | --------------------- | ---- |
+| POST   | `/api/payments/verify` | 포트원 결제 검증 |
 
-| 메소드 | 경로                 | 설명      |
-| ------ | -------------------- | --------- |
-| GET    | `/api/locations`     | 위치 목록 |
-| GET    | `/api/locations/:id` | 위치 상세 |
+### 세차 옵션 (Wash Options)
+| 메소드 | 경로                               | 설명 |
+| ------ | ---------------------------------- | ---- |
+| GET    | `/api/wash-options/masters`      | MST 목록 조회 |
+| POST   | `/api/wash-options/masters`      | MST 저장(신규) |
+| PUT    | `/api/wash-options/masters/:woptMstIdx` | MST 저장(수정) |
+| GET    | `/api/wash-options/details`      | DTL 목록 조회 |
+| POST   | `/api/wash-options/details`      | DTL 저장(신규) |
+| PUT    | `/api/wash-options/details/:woptDtlIdx` | DTL 저장(수정) |
 
 ---
 

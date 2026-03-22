@@ -1,5 +1,6 @@
 const VehicleService = require("../services/vehicle_service");
 const { Ok, Fail } = require("../utils/response");
+const { HandleControllerError } = require("../utils/controller_error");
 
 const SearchLogic1 = async (req, res) => {
   try {
@@ -21,7 +22,7 @@ const SearchLogic1 = async (req, res) => {
     });
   } catch (error) {
     console.error("Get vehicles error:", error);
-    return Fail(res, 500, "차량 목록 조회 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "차량 목록 조회 중 오류가 발생했습니다.");
   }
 };
 
@@ -49,11 +50,8 @@ const SaveLogic1 = async (req, res) => {
       201,
     );
   } catch (error) {
-    if (error.statusCode === 400) {
-      return Fail(res, 400, "이미 등록된 차량 번호입니다.");
-    }
     console.error("Create vehicle error:", error);
-    return Fail(res, 500, "차량 등록 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "차량 등록 중 오류가 발생했습니다.");
   }
 };
 
@@ -81,11 +79,8 @@ const SaveLogic2 = async (req, res) => {
       },
     });
   } catch (error) {
-    if (error.statusCode === 404) {
-      return Fail(res, 404, "차량을 찾을 수 없습니다.");
-    }
     console.error("Update vehicle error:", error);
-    return Fail(res, 500, "차량 수정 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "차량 수정 중 오류가 발생했습니다.");
   }
 };
 
@@ -96,11 +91,8 @@ const SaveLogic3 = async (req, res) => {
       message: "차량이 삭제되었습니다.",
     });
   } catch (error) {
-    if (error.statusCode === 404) {
-      return Fail(res, 404, "차량을 찾을 수 없습니다.");
-    }
     console.error("Delete vehicle error:", error);
-    return Fail(res, 500, "차량 삭제 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "차량 삭제 중 오류가 발생했습니다.");
   }
 };
 

@@ -1,5 +1,6 @@
 const BusinessService = require("../services/business_service");
 const { Ok, Fail } = require("../utils/response");
+const { HandleControllerError } = require("../utils/controller_error");
 
 const SaveLogic1 = async (req, res) => {
   try {
@@ -28,11 +29,8 @@ const SaveLogic1 = async (req, res) => {
       201,
     );
   } catch (error) {
-    if (error.statusCode === 400) {
-      return Fail(res, 400, "사업자번호, 사업장명, 전화번호, 주소는 필수입니다.");
-    }
     console.error("Create business error:", error);
-    return Fail(res, 500, "사업장 저장 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "사업장 저장 중 오류가 발생했습니다.");
   }
 };
 
@@ -64,24 +62,8 @@ const SaveLogic2 = async (req, res) => {
       },
     });
   } catch (error) {
-    if (error.statusCode === 404) {
-      return Fail(res, 404, "사업장을 찾을 수 없습니다.");
-    }
-    if (error.statusCode === 400) {
-      const messageByCode = {
-        EMPTY_BUSINESS_NUMBER: "사업자번호는 빈 값일 수 없습니다.",
-        EMPTY_COMPANY_NAME: "사업장명은 빈 값일 수 없습니다.",
-        EMPTY_PHONE: "전화번호는 빈 값일 수 없습니다.",
-        EMPTY_ADDRESS: "주소는 빈 값일 수 없습니다.",
-      };
-      return Fail(
-        res,
-        400,
-        messageByCode[error.message] || "입력값이 올바르지 않습니다.",
-      );
-    }
     console.error("Update business error:", error);
-    return Fail(res, 500, "사업장 수정 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "사업장 수정 중 오류가 발생했습니다.");
   }
 };
 
@@ -120,11 +102,8 @@ const SearchLogic1 = async (req, res) => {
       totalRevenue,
     });
   } catch (error) {
-    if (error.statusCode === 404) {
-      return Fail(res, 404, "룸을 찾을 수 없습니다.");
-    }
     console.error("Get room detail error:", error);
-    return Fail(res, 500, "룸 조회 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "룸 조회 중 오류가 발생했습니다.");
   }
 };
 
@@ -146,14 +125,8 @@ const SaveLogic3 = async (req, res) => {
       201,
     );
   } catch (error) {
-    if (error.statusCode === 400) {
-      return Fail(res, 400, "사업장 ID와 룸 이름은 필수입니다.");
-    }
-    if (error.statusCode === 404) {
-      return Fail(res, 404, "사업장을 찾을 수 없습니다.");
-    }
     console.error("Create room error:", error);
-    return Fail(res, 500, "룸 추가 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "룸 추가 중 오류가 발생했습니다.");
   }
 };
 
@@ -176,22 +149,8 @@ const SaveLogic4 = async (req, res) => {
       },
     });
   } catch (error) {
-    if (error.statusCode === 404) {
-      return Fail(res, 404, "룸을 찾을 수 없습니다.");
-    }
-    if (error.statusCode === 400) {
-      const messageByCode = {
-        EMPTY_ROOM_NAME: "룸 이름은 빈 값일 수 없습니다.",
-        INVALID_PERIOD: "종료일자는 시작일자 이후여야 합니다.",
-      };
-      return Fail(
-        res,
-        400,
-        messageByCode[error.message] || "입력값이 올바르지 않습니다.",
-      );
-    }
     console.error("Update room error:", error);
-    return Fail(res, 500, "룸 수정 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "룸 수정 중 오류가 발생했습니다.");
   }
 };
 
@@ -220,11 +179,8 @@ const SaveLogic5 = async (req, res) => {
 
     return Ok(res, { deleted: true });
   } catch (error) {
-    if (error.statusCode === 404) {
-      return Fail(res, 404, "룸을 찾을 수 없습니다.");
-    }
     console.error("Delete room error:", error);
-    return Fail(res, 500, "룸 삭제 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "룸 삭제 중 오류가 발생했습니다.");
   }
 };
 
@@ -261,7 +217,7 @@ const SearchLogic2 = async (req, res) => {
     });
   } catch (error) {
     console.error("Get businesses error:", error);
-    return Fail(res, 500, "사업장 목록 조회 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "사업장 목록 조회 중 오류가 발생했습니다.");
   }
 };
 
@@ -298,11 +254,8 @@ const SearchLogic3 = async (req, res) => {
       },
     });
   } catch (error) {
-    if (error.statusCode === 404) {
-      return Fail(res, 404, "사업장을 찾을 수 없습니다.");
-    }
     console.error("Get business error:", error);
-    return Fail(res, 500, "사업장 조회 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "사업장 조회 중 오류가 발생했습니다.");
   }
 };
 

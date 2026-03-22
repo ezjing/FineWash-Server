@@ -1,5 +1,6 @@
 const MemberService = require("../services/member_service");
 const { Ok, Fail } = require("../utils/response");
+const { HandleControllerError } = require("../utils/controller_error");
 
 const SaveLogic1 = async (req, res) => {
   try {
@@ -17,11 +18,8 @@ const SaveLogic1 = async (req, res) => {
       },
     });
   } catch (error) {
-    if (error.statusCode === 404) {
-      return Fail(res, 404, "사용자를 찾을 수 없습니다.");
-    }
     console.error("Update profile error:", error);
-    return Fail(res, 500, "프로필 업데이트 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "프로필 업데이트 중 오류가 발생했습니다.");
   }
 };
 
@@ -32,14 +30,8 @@ const SaveLogic2 = async (req, res) => {
       message: "비밀번호가 변경되었습니다.",
     });
   } catch (error) {
-    if (error.statusCode === 404) {
-      return Fail(res, 404, "사용자를 찾을 수 없습니다.");
-    }
-    if (error.statusCode === 400) {
-      return Fail(res, 400, "현재 비밀번호가 올바르지 않습니다.");
-    }
     console.error("Change password error:", error);
-    return Fail(res, 500, "비밀번호 변경 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "비밀번호 변경 중 오류가 발생했습니다.");
   }
 };
 

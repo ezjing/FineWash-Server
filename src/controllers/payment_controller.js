@@ -1,5 +1,6 @@
 const PaymentService = require("../services/payment_service");
 const { Ok, Fail } = require("../utils/response");
+const { HandleControllerError } = require("../utils/controller_error");
 
 const SaveLogic1 = async (req, res) => {
   try {
@@ -11,7 +12,7 @@ const SaveLogic1 = async (req, res) => {
     });
   } catch (error) {
     console.error("Payment verification error:", error);
-    return Fail(res, 500, "결제 검증 중 오류가 발생했습니다.", { verified: false });
+    return HandleControllerError(res, error, "결제 검증 중 오류가 발생했습니다.");
   }
 };
 

@@ -1,5 +1,6 @@
 const ProductService = require("../services/product_service");
-const { Ok, Fail } = require("../utils/response");
+const { Ok } = require("../utils/response");
+const { HandleControllerError } = require("../utils/controller_error");
 
 const SearchLogic1 = async (req, res) => {
   try {
@@ -20,10 +21,8 @@ const SearchLogic1 = async (req, res) => {
     });
   } catch (error) {
     console.error("Get products error:", error);
-    return res.json({
-      success: true,
-      products: ProductService.dummyProducts,
-    });
+    const products = await ProductService.SearchLogic4();
+    return Ok(res, { products });
   }
 };
 
@@ -42,11 +41,8 @@ const SearchLogic2 = async (req, res) => {
       },
     });
   } catch (error) {
-    if (error.statusCode === 404) {
-      return Fail(res, 404, "상품을 찾을 수 없습니다.");
-    }
     console.error("Get product error:", error);
-    return Fail(res, 500, "상품 조회 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "상품 조회 중 오류가 발생했습니다.");
   }
 };
 
@@ -64,7 +60,7 @@ const SearchLogic3 = async (req, res) => {
     });
   } catch (error) {
     console.error("Get products by category error:", error);
-    return Fail(res, 500, "상품 조회 중 오류가 발생했습니다.");
+    return HandleControllerError(res, error, "상품 조회 중 오류가 발생했습니다.");
   }
 };
 

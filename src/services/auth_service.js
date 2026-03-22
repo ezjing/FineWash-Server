@@ -1,5 +1,7 @@
 const jwt = require("jsonwebtoken");
 const { Member } = require("../models");
+const { AppError } = require("../utils/app_error");
+const CODES = require("../utils/error_codes");
 
 const generateToken = (memIdx) => {
   return jwt.sign({ memIdx }, process.env.JWT_SECRET || "default-secret-key", {
@@ -12,9 +14,11 @@ const SaveLogic1 = async (body) => {
 
   const existingUser = await Member.findOne({ where: { email } });
   if (existingUser) {
-    const err = new Error("DUPLICATE_EMAIL");
-    err.statusCode = 400;
-    throw err;
+    throw new AppError(
+      CODES.AUTH.DUPLICATE_EMAIL.code,
+      CODES.AUTH.DUPLICATE_EMAIL.status,
+      CODES.AUTH.DUPLICATE_EMAIL.message,
+    );
   }
 
   const fullAddress = `${address} ${address_detail}`;
@@ -38,16 +42,20 @@ const SaveLogic2 = async (body) => {
     where: { email },
   });
   if (!user) {
-    const err = new Error("INVALID_LOGIN");
-    err.statusCode = 401;
-    throw err;
+    throw new AppError(
+      CODES.AUTH.INVALID_LOGIN.code,
+      CODES.AUTH.INVALID_LOGIN.status,
+      CODES.AUTH.INVALID_LOGIN.message,
+    );
   }
 
   const isMatch = await user.comparePassword(password);
   if (!isMatch) {
-    const err = new Error("INVALID_LOGIN");
-    err.statusCode = 401;
-    throw err;
+    throw new AppError(
+      CODES.AUTH.INVALID_LOGIN.code,
+      CODES.AUTH.INVALID_LOGIN.status,
+      CODES.AUTH.INVALID_LOGIN.message,
+    );
   }
 
   const token = generateToken(user.mem_idx);
@@ -57,15 +65,16 @@ const SaveLogic2 = async (body) => {
 const SearchLogic1 = async (memIdx) => {
   const user = await Member.findByPk(memIdx);
   if (!user) {
-    const err = new Error("NOT_FOUND_MEMBER");
-    err.statusCode = 404;
-    throw err;
+    throw new AppError(
+      CODES.AUTH.MEMBER_NOT_FOUND.code,
+      CODES.AUTH.MEMBER_NOT_FOUND.status,
+      CODES.AUTH.MEMBER_NOT_FOUND.message,
+    );
   }
   return user;
 };
 
 module.exports = {
-  generateToken,
   SaveLogic1,
   SaveLogic2,
   SearchLogic1,

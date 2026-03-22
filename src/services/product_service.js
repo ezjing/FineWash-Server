@@ -1,4 +1,6 @@
 const { Product } = require("../models");
+const { AppError } = require("../utils/app_error");
+const CODES = require("../utils/error_codes");
 
 const dummyProducts = [
   { id: "1", name: "프리미엄 세차 샴푸", price: 25000, image: "🧴", category: "세차용품" },
@@ -35,9 +37,11 @@ const SearchLogic2 = async (id) => {
     product = dummyProducts.find((p) => p.id === id) || null;
   }
   if (!product) {
-    const err = new Error("NOT_FOUND_PRODUCT");
-    err.statusCode = 404;
-    throw err;
+    throw new AppError(
+      CODES.PRODUCT.NOT_FOUND_PRODUCT.code,
+      CODES.PRODUCT.NOT_FOUND_PRODUCT.status,
+      CODES.PRODUCT.NOT_FOUND_PRODUCT.message,
+    );
   }
   return product;
 };
@@ -57,9 +61,9 @@ const SearchLogic3 = async (category) => {
 };
 
 module.exports = {
-  dummyProducts,
   SearchLogic1,
   SearchLogic2,
   SearchLogic3,
+  SearchLogic4: async () => dummyProducts,
 };
 

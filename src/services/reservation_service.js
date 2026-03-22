@@ -1,4 +1,6 @@
 const { Reservation, Vehicle } = require("../models");
+const { AppError } = require("../utils/app_error");
+const CODES = require("../utils/error_codes");
 
 const SearchLogic1 = async (memIdx) => {
   return await Reservation.findAll({
@@ -14,9 +16,11 @@ const SearchLogic2 = async (memIdx, resvIdx) => {
     include: [{ model: Vehicle, as: "vehicle" }],
   });
   if (!booking) {
-    const err = new Error("NOT_FOUND_RESERVATION");
-    err.statusCode = 404;
-    throw err;
+    throw new AppError(
+      CODES.RESERVATION.NOT_FOUND_RESERVATION.code,
+      CODES.RESERVATION.NOT_FOUND_RESERVATION.status,
+      CODES.RESERVATION.NOT_FOUND_RESERVATION.message,
+    );
   }
   return booking;
 };
@@ -83,15 +87,19 @@ const SaveLogic2 = async (memIdx, resvIdx) => {
   });
 
   if (!booking) {
-    const err = new Error("NOT_FOUND_RESERVATION");
-    err.statusCode = 404;
-    throw err;
+    throw new AppError(
+      CODES.RESERVATION.NOT_FOUND_RESERVATION.code,
+      CODES.RESERVATION.NOT_FOUND_RESERVATION.status,
+      CODES.RESERVATION.NOT_FOUND_RESERVATION.message,
+    );
   }
 
   if (booking.contract_yn === "N") {
-    const err = new Error("ALREADY_CANCELLED");
-    err.statusCode = 400;
-    throw err;
+    throw new AppError(
+      CODES.RESERVATION.ALREADY_CANCELLED.code,
+      CODES.RESERVATION.ALREADY_CANCELLED.status,
+      CODES.RESERVATION.ALREADY_CANCELLED.message,
+    );
   }
 
   booking.contract_yn = "N";

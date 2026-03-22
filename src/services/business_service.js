@@ -1,4 +1,6 @@
 const { BusinessMaster, BusinessDetail, Reservation } = require("../models");
+const { AppError } = require("../utils/app_error");
+const CODES = require("../utils/error_codes");
 
 const SaveLogic1 = async (memIdx, body = {}) => {
   const {
@@ -19,9 +21,11 @@ const SaveLogic1 = async (memIdx, body = {}) => {
   const addr = String(address ?? "").trim();
 
   if (!bn || !cn || !ph || !addr) {
-    const err = new Error("MISSING_REQUIRED");
-    err.statusCode = 400;
-    throw err;
+    throw new AppError(
+      CODES.BUSINESS.REQUIRED_FIELDS.code,
+      CODES.BUSINESS.REQUIRED_FIELDS.status,
+      CODES.BUSINESS.REQUIRED_FIELDS.message,
+    );
   }
 
   return await BusinessMaster.create({
@@ -48,9 +52,11 @@ const SaveLogic2 = async (memIdx, busMstIdx, body = {}) => {
     where: { bus_mst_idx: busMstIdx, mem_idx: memIdx },
   });
   if (!business) {
-    const err = new Error("NOT_FOUND_BUSINESS");
-    err.statusCode = 404;
-    throw err;
+    throw new AppError(
+      CODES.BUSINESS.NOT_FOUND_BUSINESS.code,
+      CODES.BUSINESS.NOT_FOUND_BUSINESS.status,
+      CODES.BUSINESS.NOT_FOUND_BUSINESS.message,
+    );
   }
 
   const {
@@ -80,24 +86,32 @@ const SaveLogic2 = async (memIdx, busMstIdx, body = {}) => {
   payload.update_id = String(memIdx);
 
   if ("business_number" in payload && !payload.business_number) {
-    const err = new Error("EMPTY_BUSINESS_NUMBER");
-    err.statusCode = 400;
-    throw err;
+    throw new AppError(
+      CODES.BUSINESS.EMPTY_BUSINESS_NUMBER.code,
+      CODES.BUSINESS.EMPTY_BUSINESS_NUMBER.status,
+      CODES.BUSINESS.EMPTY_BUSINESS_NUMBER.message,
+    );
   }
   if ("company_name" in payload && !payload.company_name) {
-    const err = new Error("EMPTY_COMPANY_NAME");
-    err.statusCode = 400;
-    throw err;
+    throw new AppError(
+      CODES.BUSINESS.EMPTY_COMPANY_NAME.code,
+      CODES.BUSINESS.EMPTY_COMPANY_NAME.status,
+      CODES.BUSINESS.EMPTY_COMPANY_NAME.message,
+    );
   }
   if ("phone" in payload && !payload.phone) {
-    const err = new Error("EMPTY_PHONE");
-    err.statusCode = 400;
-    throw err;
+    throw new AppError(
+      CODES.BUSINESS.EMPTY_PHONE.code,
+      CODES.BUSINESS.EMPTY_PHONE.status,
+      CODES.BUSINESS.EMPTY_PHONE.message,
+    );
   }
   if ("address" in payload && !payload.address) {
-    const err = new Error("EMPTY_ADDRESS");
-    err.statusCode = 400;
-    throw err;
+    throw new AppError(
+      CODES.BUSINESS.EMPTY_ADDRESS.code,
+      CODES.BUSINESS.EMPTY_ADDRESS.status,
+      CODES.BUSINESS.EMPTY_ADDRESS.message,
+    );
   }
 
   await business.update(payload);
@@ -123,9 +137,11 @@ const SearchLogic1 = async (memIdx, busDtlIdx) => {
   });
 
   if (!room) {
-    const err = new Error("NOT_FOUND_ROOM");
-    err.statusCode = 404;
-    throw err;
+    throw new AppError(
+      CODES.BUSINESS.NOT_FOUND_ROOM.code,
+      CODES.BUSINESS.NOT_FOUND_ROOM.status,
+      CODES.BUSINESS.NOT_FOUND_ROOM.message,
+    );
   }
 
   const reservations = (room.reservations || []).sort(
@@ -143,18 +159,22 @@ const SaveLogic3 = async (memIdx, body = {}) => {
   const { busMstIdx, roomName, startDate, endDate, activeYn } = body;
 
   if (!busMstIdx || !roomName || String(roomName).trim() === "") {
-    const err = new Error("MISSING_ROOM_REQUIRED");
-    err.statusCode = 400;
-    throw err;
+    throw new AppError(
+      CODES.BUSINESS.ROOM_REQUIRED_FIELDS.code,
+      CODES.BUSINESS.ROOM_REQUIRED_FIELDS.status,
+      CODES.BUSINESS.ROOM_REQUIRED_FIELDS.message,
+    );
   }
 
   const business = await BusinessMaster.findOne({
     where: { bus_mst_idx: busMstIdx, mem_idx: memIdx },
   });
   if (!business) {
-    const err = new Error("NOT_FOUND_BUSINESS");
-    err.statusCode = 404;
-    throw err;
+    throw new AppError(
+      CODES.BUSINESS.NOT_FOUND_BUSINESS.code,
+      CODES.BUSINESS.NOT_FOUND_BUSINESS.status,
+      CODES.BUSINESS.NOT_FOUND_BUSINESS.message,
+    );
   }
 
   return await BusinessDetail.create({
@@ -180,9 +200,11 @@ const SaveLogic4 = async (memIdx, busDtlIdx, body = {}) => {
   });
 
   if (!room) {
-    const err = new Error("NOT_FOUND_ROOM");
-    err.statusCode = 404;
-    throw err;
+    throw new AppError(
+      CODES.BUSINESS.NOT_FOUND_ROOM.code,
+      CODES.BUSINESS.NOT_FOUND_ROOM.status,
+      CODES.BUSINESS.NOT_FOUND_ROOM.message,
+    );
   }
 
   const { roomName, startDate, endDate, activeYn } = body;
@@ -193,9 +215,11 @@ const SaveLogic4 = async (memIdx, busDtlIdx, body = {}) => {
   if (endDate != null) payload.end_date = endDate || null;
 
   if ("room_name" in payload && !payload.room_name) {
-    const err = new Error("EMPTY_ROOM_NAME");
-    err.statusCode = 400;
-    throw err;
+    throw new AppError(
+      CODES.BUSINESS.EMPTY_ROOM_NAME.code,
+      CODES.BUSINESS.EMPTY_ROOM_NAME.status,
+      CODES.BUSINESS.EMPTY_ROOM_NAME.message,
+    );
   }
 
   if ("start_date" in payload && "end_date" in payload) {
@@ -203,9 +227,11 @@ const SaveLogic4 = async (memIdx, busDtlIdx, body = {}) => {
       const s = new Date(payload.start_date);
       const e = new Date(payload.end_date);
       if (!Number.isNaN(s.getTime()) && !Number.isNaN(e.getTime()) && e < s) {
-        const err = new Error("INVALID_PERIOD");
-        err.statusCode = 400;
-        throw err;
+        throw new AppError(
+          CODES.BUSINESS.INVALID_PERIOD.code,
+          CODES.BUSINESS.INVALID_PERIOD.status,
+          CODES.BUSINESS.INVALID_PERIOD.message,
+        );
       }
     }
   }
@@ -228,9 +254,11 @@ const SaveLogic5 = async (memIdx, busDtlIdx) => {
   });
 
   if (!room) {
-    const err = new Error("NOT_FOUND_ROOM");
-    err.statusCode = 404;
-    throw err;
+    throw new AppError(
+      CODES.BUSINESS.NOT_FOUND_ROOM.code,
+      CODES.BUSINESS.NOT_FOUND_ROOM.status,
+      CODES.BUSINESS.NOT_FOUND_ROOM.message,
+    );
   }
 
   const reservationCount = await Reservation.count({
@@ -261,9 +289,11 @@ const SearchLogic3 = async (memIdx, busMstIdx) => {
   });
 
   if (!business) {
-    const err = new Error("NOT_FOUND_BUSINESS");
-    err.statusCode = 404;
-    throw err;
+    throw new AppError(
+      CODES.BUSINESS.NOT_FOUND_BUSINESS.code,
+      CODES.BUSINESS.NOT_FOUND_BUSINESS.status,
+      CODES.BUSINESS.NOT_FOUND_BUSINESS.message,
+    );
   }
   return business;
 };
