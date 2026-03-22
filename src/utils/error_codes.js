@@ -109,6 +109,11 @@ module.exports = {
       status: 400,
       message: "종료일자는 시작일자 이후여야 합니다.",
     },
+    DELETE_HAS_RESERVATIONS: {
+      code: "BUSINESS.DELETE_HAS_RESERVATIONS",
+      status: 400,
+      message: "예약 내역이 있는 사업장은 삭제할 수 없습니다.",
+    },
   },
   PRODUCT: {
     NOT_FOUND_PRODUCT: {

@@ -259,6 +259,16 @@ const SearchLogic3 = async (req, res) => {
   }
 };
 
+const SaveLogic6 = async (req, res) => {
+  try {
+    await BusinessService.SaveLogic6(req.user.memIdx, req.params.busMstIdx);
+    return Ok(res, { deleted: true });
+  } catch (error) {
+    console.error("Delete business error:", error);
+    return HandleControllerError(res, error, "사업장 삭제 중 오류가 발생했습니다.");
+  }
+};
+
 module.exports = {
   SaveLogic1,
   SaveLogic2,
@@ -266,6 +276,7 @@ module.exports = {
   SaveLogic3,
   SaveLogic4,
   SaveLogic5,
+  SaveLogic6,
   SearchLogic2,
   SearchLogic3,
 };

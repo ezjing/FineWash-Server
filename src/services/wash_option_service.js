@@ -1,3 +1,4 @@
+const { sequelize } = require("../config/db");
 const {
   WashOptionMaster,
   WashOptionDetail,
@@ -5,6 +6,41 @@ const {
 } = require("../models");
 const { AppError } = require("../utils/app_error");
 const CODES = require("../utils/error_codes");
+
+/** API camelCase / DB snake_case 공통 입력 정규화 */
+const normalizeMstInput = (body = {}) => ({
+  option_name: body.option_name ?? body.optionName ?? null,
+  vehicle_type: body.vehicle_type ?? body.vehicleType ?? null,
+  seq:
+    body.seq != null && String(body.seq).trim() !== ""
+      ? Number(body.seq)
+      : 0,
+  value1:
+    body.value1 != null && String(body.value1).trim() !== ""
+      ? Number(body.value1)
+      : null,
+  value2:
+    body.value2 != null && String(body.value2).trim() !== ""
+      ? Number(body.value2)
+      : null,
+});
+
+const normalizeDtlInput = (body = {}) => ({
+  option_name: body.option_name ?? body.optionName ?? null,
+  vehicle_type: body.vehicle_type ?? body.vehicleType ?? null,
+  seq:
+    body.seq != null && String(body.seq).trim() !== ""
+      ? Number(body.seq)
+      : 0,
+  value1:
+    body.value1 != null && String(body.value1).trim() !== ""
+      ? Number(body.value1)
+      : null,
+  value2:
+    body.value2 != null && String(body.value2).trim() !== ""
+      ? Number(body.value2)
+      : null,
+});
 
 /**
  * 내부 공통 조회 헬퍼
@@ -132,8 +168,9 @@ const SaveLogic1 = async (memIdx, body = {}) => {
     );
   }
 
+  const fields = normalizeMstInput(body);
   return await SaveInternal(WashOptionMaster, "wopt_mst_idx", {
-    ...body,
+    ...fields,
     bus_mst_idx: Number(busMstIdx),
     create_id: String(memIdx),
     update_id: String(memIdx),
@@ -164,8 +201,9 @@ const SaveLogic2 = async (memIdx, woptMstIdx, body = {}) => {
     );
   }
 
+  const fields = normalizeMstInput(body);
   return await SaveInternal(WashOptionMaster, "wopt_mst_idx", {
-    ...body,
+    ...fields,
     wopt_mst_idx: Number(woptMstIdx),
     update_id: String(memIdx),
   });
@@ -258,8 +296,9 @@ const SaveLogic3 = async (memIdx, body = {}) => {
     );
   }
 
+  const fields = normalizeDtlInput(body);
   return await SaveInternal(WashOptionDetail, "wopt_dtl_idx", {
-    ...body,
+    ...fields,
     wopt_mst_idx: Number(woptMstIdx),
     create_id: String(memIdx),
     update_id: String(memIdx),
@@ -298,11 +337,74 @@ const SaveLogic4 = async (memIdx, woptDtlIdx, body = {}) => {
     );
   }
 
+  const fields = normalizeDtlInput(body);
   return await SaveInternal(WashOptionDetail, "wopt_dtl_idx", {
-    ...body,
+    ...fields,
     wopt_dtl_idx: Number(woptDtlIdx),
     update_id: String(memIdx),
   });
+};
+
+/**
+ * DeleteLogic1 — MST 삭제 (하위 DTL 선삭제 후 MST 삭제)
+ */
+const DeleteLogic1 = async (memIdx, woptMstIdx) => {
+  const existing = await WashOptionMaster.findByPk(woptMstIdx, {
+    include: [
+      {
+        model: BusinessMaster,
+        as: "businessMaster",
+        where: { mem_idx: memIdx },
+        required: true,
+      },
+    ],
+  });
+  if (!existing) {
+    throw new AppError(
+      CODES.WASH_OPTION.NOT_FOUND_MASTER.code,
+      CODES.WASH_OPTION.NOT_FOUND_MASTER.status,
+      CODES.WASH_OPTION.NOT_FOUND_MASTER.message,
+    );
+  }
+
+  await sequelize.transaction(async (transaction) => {
+    await WashOptionDetail.destroy({
+      where: { wopt_mst_idx: woptMstIdx },
+      transaction,
+    });
+    await existing.destroy({ transaction });
+  });
+};
+
+/**
+ * DeleteLogic2 — DTL 삭제
+ */
+const DeleteLogic2 = async (memIdx, woptDtlIdx) => {
+  const existing = await WashOptionDetail.findByPk(woptDtlIdx, {
+    include: [
+      {
+        model: WashOptionMaster,
+        as: "washOptionMaster",
+        required: true,
+        include: [
+          {
+            model: BusinessMaster,
+            as: "businessMaster",
+            where: { mem_idx: memIdx },
+            required: true,
+          },
+        ],
+      },
+    ],
+  });
+  if (!existing) {
+    throw new AppError(
+      CODES.WASH_OPTION.NOT_FOUND_DETAIL.code,
+      CODES.WASH_OPTION.NOT_FOUND_DETAIL.status,
+      CODES.WASH_OPTION.NOT_FOUND_DETAIL.message,
+    );
+  }
+  await existing.destroy();
 };
 
 module.exports = {
@@ -312,4 +414,6 @@ module.exports = {
   SaveLogic2,
   SaveLogic3,
   SaveLogic4,
+  DeleteLogic1,
+  DeleteLogic2,
 };

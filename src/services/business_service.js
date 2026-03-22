@@ -1,4 +1,15 @@
-const { BusinessMaster, BusinessDetail, Reservation } = require("../models");
+const { Op } = require("sequelize");
+const {
+  sequelize,
+  BusinessMaster,
+  BusinessDetail,
+  Reservation,
+  ScheduleMaster,
+  ScheduleDetail,
+  WashOptionMaster,
+  WashOptionDetail,
+  Member,
+} = require("../models");
 const { AppError } = require("../utils/app_error");
 const CODES = require("../utils/error_codes");
 
@@ -298,6 +309,83 @@ const SearchLogic3 = async (memIdx, busMstIdx) => {
   return business;
 };
 
+/** 사업장(MST) 삭제 — 하위 룸·옵션·스케줄 정리, 예약이 있으면 불가 */
+const SaveLogic6 = async (memIdx, busMstIdx) => {
+  const business = await BusinessMaster.findOne({
+    where: { bus_mst_idx: busMstIdx, mem_idx: memIdx },
+    include: [{ model: BusinessDetail, as: "businessDetails", required: false }],
+  });
+
+  if (!business) {
+    throw new AppError(
+      CODES.BUSINESS.NOT_FOUND_BUSINESS.code,
+      CODES.BUSINESS.NOT_FOUND_BUSINESS.status,
+      CODES.BUSINESS.NOT_FOUND_BUSINESS.message,
+    );
+  }
+
+  const roomIds = (business.businessDetails || []).map((r) => r.bus_dtl_idx);
+  if (roomIds.length > 0) {
+    const resvCount = await Reservation.count({
+      where: { bus_dtl_idx: { [Op.in]: roomIds } },
+    });
+    if (resvCount > 0) {
+      throw new AppError(
+        CODES.BUSINESS.DELETE_HAS_RESERVATIONS.code,
+        CODES.BUSINESS.DELETE_HAS_RESERVATIONS.status,
+        CODES.BUSINESS.DELETE_HAS_RESERVATIONS.message,
+      );
+    }
+  }
+
+  await sequelize.transaction(async (t) => {
+    if (roomIds.length > 0) {
+      await ScheduleDetail.destroy({
+        where: { bus_dtl_idx: { [Op.in]: roomIds } },
+        transaction: t,
+      });
+      await ScheduleMaster.destroy({
+        where: { bus_dtl_idx: { [Op.in]: roomIds } },
+        transaction: t,
+      });
+    }
+
+    const woptRows = await WashOptionMaster.findAll({
+      attributes: ["wopt_mst_idx"],
+      where: { bus_mst_idx: busMstIdx },
+      transaction: t,
+    });
+    const woptMstIds = woptRows.map((row) => row.wopt_mst_idx);
+    if (woptMstIds.length > 0) {
+      await WashOptionDetail.destroy({
+        where: { wopt_mst_idx: { [Op.in]: woptMstIds } },
+        transaction: t,
+      });
+    }
+    await WashOptionMaster.destroy({
+      where: { bus_mst_idx: busMstIdx },
+      transaction: t,
+    });
+
+    await BusinessDetail.destroy({
+      where: { bus_mst_idx: busMstIdx },
+      transaction: t,
+    });
+
+    await Member.update(
+      { bus_mst_idx: null },
+      { where: { bus_mst_idx: busMstIdx }, transaction: t },
+    );
+
+    await BusinessMaster.destroy({
+      where: { bus_mst_idx: busMstIdx, mem_idx: memIdx },
+      transaction: t,
+    });
+  });
+
+  return { deleted: true };
+};
+
 module.exports = {
   SaveLogic1,
   SaveLogic2,
@@ -305,6 +393,7 @@ module.exports = {
   SaveLogic3,
   SaveLogic4,
   SaveLogic5,
+  SaveLogic6,
   SearchLogic2,
   SearchLogic3,
 };

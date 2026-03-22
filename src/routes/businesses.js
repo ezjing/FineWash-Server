@@ -10,6 +10,9 @@ router.post("/", authMiddleware, BusinessController.SaveLogic1);
 // 사업장(MST) 수정
 router.put("/:busMstIdx", authMiddleware, BusinessController.SaveLogic2);
 
+// 사업장(MST) 삭제 — GET /:id 와 구분 (메서드별)
+router.delete("/:busMstIdx", authMiddleware, BusinessController.SaveLogic6);
+
 // 룸(DTL) 상세 조회 - 해당 룸 정보 + 예약 목록 (경로가 /:id 보다 먼저 와야 함)
 router.get("/rooms/:busDtlIdx", authMiddleware, BusinessController.SearchLogic1);
 
