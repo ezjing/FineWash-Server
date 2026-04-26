@@ -17,6 +17,8 @@ const SaveLogic1 = async (req, res) => {
         phone: created.phone,
         email: created.email,
         address: created.address,
+        latitude: created.latitude,
+        longitude: created.longitude,
         businessType: created.business_type,
         depositYn: created.deposit_yn,
         depositAmount: created.deposit_amount,
@@ -52,6 +54,8 @@ const SaveLogic2 = async (req, res) => {
         phone: business.phone,
         email: business.email,
         address: business.address,
+        latitude: business.latitude,
+        longitude: business.longitude,
         businessType: business.business_type,
         depositYn: business.deposit_yn,
         depositAmount: business.deposit_amount,
@@ -197,6 +201,8 @@ const SearchLogic2 = async (req, res) => {
         phone: b.phone,
         email: b.email,
         address: b.address,
+        latitude: b.latitude,
+        longitude: b.longitude,
         businessType: b.business_type,
         depositYn: b.deposit_yn,
         depositAmount: b.deposit_amount,
@@ -234,6 +240,8 @@ const SearchLogic3 = async (req, res) => {
         phone: business.phone,
         email: business.email,
         address: business.address,
+        latitude: business.latitude,
+        longitude: business.longitude,
         businessType: business.business_type,
         depositYn: business.deposit_yn,
         depositAmount: business.deposit_amount,
@@ -269,6 +277,22 @@ const SaveLogic6 = async (req, res) => {
   }
 };
 
+// 좌표 기반 가까운 제휴 세차장 거리순 조회 (공개)
+const SearchLogic4 = async (req, res) => {
+  try {
+    const { lat, lng, latitude, longitude, limit } = req.query || {};
+    const userLat = lat ?? latitude;
+    const userLng = lng ?? longitude;
+    const businesses = await BusinessService.SearchLogic4(userLat, userLng, limit);
+    return res.json({ success: true, businesses });
+  } catch (error) {
+    console.error("Nearby businesses error:", error);
+    const message =
+      error?.message || "가까운 제휴 세차장 조회 중 오류가 발생했습니다.";
+    return res.status(error?.statusCode || 400).json({ success: false, message });
+  }
+};
+
 module.exports = {
   SaveLogic1,
   SaveLogic2,
@@ -279,5 +303,6 @@ module.exports = {
   SaveLogic6,
   SearchLogic2,
   SearchLogic3,
+  SearchLogic4,
 };
 

@@ -12,6 +12,11 @@ const {
 } = require("../models");
 const { AppError } = require("../utils/app_error");
 const CODES = require("../utils/error_codes");
+const {
+  GeocodeAddressKakao,
+  ToNumberOrNull,
+  HaversineDistanceKm,
+} = require("../utils/geo");
 
 const SaveLogic1 = async (memIdx, body = {}) => {
   const {
@@ -20,6 +25,8 @@ const SaveLogic1 = async (memIdx, body = {}) => {
     phone,
     email,
     address,
+    latitude,
+    longitude,
     businessType,
     depositYn,
     depositAmount,
@@ -39,6 +46,23 @@ const SaveLogic1 = async (memIdx, body = {}) => {
     );
   }
 
+  // 위경도 입력 정책
+  // 1) latitude/longitude가 들어오면 그대로 저장
+  // 2) 없으면 (주소가 있고, 서버 키가 있으면) 지오코딩 시도 — 실패해도 사업장 등록 자체는 가능
+  let lat = ToNumberOrNull(latitude);
+  let lng = ToNumberOrNull(longitude);
+  if (lat == null || lng == null) {
+    try {
+      const geo = await GeocodeAddressKakao(addr);
+      lat = geo.lat;
+      lng = geo.lng;
+    } catch (e) {
+      // 운영/관리 UX상: 지오코딩 실패가 치명적이면 여기서 throw로 바꾸면 됨
+      lat = null;
+      lng = null;
+    }
+  }
+
   return await BusinessMaster.create({
     mem_idx: memIdx,
     business_number: bn,
@@ -46,6 +70,8 @@ const SaveLogic1 = async (memIdx, body = {}) => {
     phone: ph,
     email: email != null ? String(email).trim() : null,
     address: addr,
+    latitude: lat,
+    longitude: lng,
     business_type: businessType != null ? String(businessType).trim() : null,
     deposit_yn: depositYn === "Y" ? "Y" : "N",
     deposit_amount:
@@ -76,6 +102,8 @@ const SaveLogic2 = async (memIdx, busMstIdx, body = {}) => {
     phone,
     email,
     address,
+    latitude,
+    longitude,
     businessType,
     depositYn,
     depositAmount,
@@ -83,11 +111,14 @@ const SaveLogic2 = async (memIdx, busMstIdx, body = {}) => {
   } = body;
 
   const payload = {};
-  if (businessNumber != null) payload.business_number = String(businessNumber).trim();
+  if (businessNumber != null)
+    payload.business_number = String(businessNumber).trim();
   if (companyName != null) payload.company_name = String(companyName).trim();
   if (phone != null) payload.phone = String(phone).trim();
   if (email != null) payload.email = String(email).trim();
   if (address != null) payload.address = String(address).trim();
+  if (latitude != null) payload.latitude = ToNumberOrNull(latitude);
+  if (longitude != null) payload.longitude = ToNumberOrNull(longitude);
   if (businessType != null) payload.business_type = String(businessType).trim();
   if (depositYn != null) payload.deposit_yn = depositYn === "Y" ? "Y" : "N";
   if (depositAmount != null && !Number.isNaN(Number(depositAmount))) {
@@ -123,6 +154,22 @@ const SaveLogic2 = async (memIdx, busMstIdx, body = {}) => {
       CODES.BUSINESS.EMPTY_ADDRESS.status,
       CODES.BUSINESS.EMPTY_ADDRESS.message,
     );
+  }
+
+  // 주소가 변경됐고 위경도는 별도로 안 줬으면: 서버 지오코딩으로 자동 갱신 시도
+  const addressChanged = "address" in payload;
+  const latProvided = "latitude" in payload;
+  const lngProvided = "longitude" in payload;
+  if (addressChanged && (!latProvided || !lngProvided)) {
+    try {
+      const geo = await GeocodeAddressKakao(payload.address);
+      payload.latitude = geo.lat;
+      payload.longitude = geo.lng;
+    } catch (e) {
+      // 기존 좌표 유지(혹은 null) 정책: 여기서는 강제 실패시키지 않음
+      if (!latProvided) delete payload.latitude;
+      if (!lngProvided) delete payload.longitude;
+    }
   }
 
   await business.update(payload);
@@ -288,7 +335,9 @@ const SaveLogic5 = async (memIdx, busDtlIdx) => {
 const SearchLogic2 = async (memIdx) => {
   return await BusinessMaster.findAll({
     where: { mem_idx: memIdx },
-    include: [{ model: BusinessDetail, as: "businessDetails", required: false }],
+    include: [
+      { model: BusinessDetail, as: "businessDetails", required: false },
+    ],
     order: [["create_date", "DESC"]],
   });
 };
@@ -296,7 +345,9 @@ const SearchLogic2 = async (memIdx) => {
 const SearchLogic3 = async (memIdx, busMstIdx) => {
   const business = await BusinessMaster.findOne({
     where: { bus_mst_idx: busMstIdx, mem_idx: memIdx },
-    include: [{ model: BusinessDetail, as: "businessDetails", required: false }],
+    include: [
+      { model: BusinessDetail, as: "businessDetails", required: false },
+    ],
   });
 
   if (!business) {
@@ -309,11 +360,80 @@ const SearchLogic3 = async (memIdx, busMstIdx) => {
   return business;
 };
 
+/**
+ * 좌표 기반 가까운 제휴 세차장 조회 (공개 API 용)
+ * - 클라이언트가 전달한 lat/lng를 그대로 사용
+ * - business_type=PARTNER + (latitude/longitude 있는 것)만 대상으로 거리 계산
+ * - 활성 룸(active_yn='Y')이 1개 이상 있는 사업장만 내려줌(UX)
+ */
+const SearchLogic4 = async (latitude, longitude, limit = 20) => {
+  const userLat = ToNumberOrNull(latitude);
+  const userLng = ToNumberOrNull(longitude);
+  if (userLat == null || userLng == null) {
+    throw new AppError(
+      CODES.BUSINESS.REQUIRED_FIELDS.code,
+      CODES.BUSINESS.REQUIRED_FIELDS.status,
+      "lat/lng(또는 latitude/longitude)가 필요합니다.",
+    );
+  }
+
+  const safeLimit = Number.isFinite(Number(limit))
+    ? Math.max(1, Math.min(200, Number(limit)))
+    : 20;
+
+  const rows = await BusinessMaster.findAll({
+    where: {
+      business_type: "PARTNER",
+      latitude: { [Op.ne]: null },
+      longitude: { [Op.ne]: null },
+    },
+    include: [
+      {
+        model: BusinessDetail,
+        as: "businessDetails",
+        required: true,
+        where: { active_yn: "Y" },
+      },
+    ],
+  });
+
+  const mapped = (rows || [])
+    .map((b) => {
+      const lat = ToNumberOrNull(b.latitude);
+      const lng = ToNumberOrNull(b.longitude);
+      if (lat == null || lng == null) return null;
+
+      const distanceKmRaw = HaversineDistanceKm(userLat, userLng, lat, lng);
+      const distanceKm = Math.round(distanceKmRaw * 10) / 10; // 1 decimal for client display
+
+      const details = Array.isArray(b.businessDetails) ? b.businessDetails : [];
+
+      return {
+        busMstIdx: b.bus_mst_idx,
+        companyName: b.company_name,
+        address: b.address,
+        distanceKm,
+        businessDetails: details.map((bd) => ({
+          busDtlIdx: bd.bus_dtl_idx,
+          roomName: bd.room_name,
+          activeYn: bd.active_yn,
+        })),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.distanceKm - b.distanceKm)
+    .slice(0, safeLimit);
+
+  return mapped;
+};
+
 /** 사업장(MST) 삭제 — 하위 룸·옵션·스케줄 정리, 예약이 있으면 불가 */
 const SaveLogic6 = async (memIdx, busMstIdx) => {
   const business = await BusinessMaster.findOne({
     where: { bus_mst_idx: busMstIdx, mem_idx: memIdx },
-    include: [{ model: BusinessDetail, as: "businessDetails", required: false }],
+    include: [
+      { model: BusinessDetail, as: "businessDetails", required: false },
+    ],
   });
 
   if (!business) {
@@ -396,5 +516,5 @@ module.exports = {
   SaveLogic6,
   SearchLogic2,
   SearchLogic3,
+  SearchLogic4,
 };
-

@@ -47,6 +47,18 @@ module.exports = (sequelize) => {
         field: "address",
         comment: "주소",
       },
+      latitude: {
+        type: DataTypes.DOUBLE,
+        allowNull: true,
+        field: "latitude",
+        comment: "위도",
+      },
+      longitude: {
+        type: DataTypes.DOUBLE,
+        allowNull: true,
+        field: "longitude",
+        comment: "경도",
+      },
       business_type: {
         type: DataTypes.STRING(20),
         allowNull: true,

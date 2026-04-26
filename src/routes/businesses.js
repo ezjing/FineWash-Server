@@ -4,6 +4,9 @@ const BusinessController = require("../controllers/business_controller");
 
 const router = express.Router();
 
+// 가까운 제휴 세차장 조회 (공개 API) — auth 없이 사용
+router.get("/nearby", BusinessController.SearchLogic4);
+
 // 사업장(MST) 등록
 router.post("/", authMiddleware, BusinessController.SaveLogic1);
 

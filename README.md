@@ -82,8 +82,14 @@ npm start
 PORT=3000
 NODE_ENV=development
 
-# SQLite 데이터베이스 (선택, 미설정 시 프로젝트 루트에 database.sqlite 생성)
-# DB_PATH=./database.sqlite
+# DB 선택 (기본: sqlite)
+# DB_DIALECT=sqlite
+
+# SQLite 데이터베이스 (선택)
+# DB_PATH=./fineWash.db
+
+# (옵션) 개발에서만 SQLite 스키마 자동 동기화(alter) 제어
+# DB_SYNC_ALTER=true
 
 # JWT 설정
 JWT_SECRET=dev-secret-key-for-local-development-only
@@ -101,8 +107,13 @@ CORS_ORIGIN=*
 PORT=3000
 NODE_ENV=production
 
-# SQLite 데이터베이스 (선택)
-# DB_PATH=./database.sqlite
+# DB (MySQL)
+DB_DIALECT=mysql
+DB_HOST=your-mysql-host
+DB_PORT=3306
+DB_NAME=finewash_prod
+DB_USER=finewash_user
+DB_PASSWORD=CHANGE_THIS
 
 # JWT 설정
 JWT_SECRET=CHANGE_THIS_TO_SECURE_RANDOM_STRING  # ⚠️ 반드시 변경!
@@ -159,6 +170,7 @@ CORS_ORIGIN=https://your-app-domain.com
 | ------ | ---------------------------- | ---- |
 | POST   | `/api/businesses`            | 사업장 등록(MST) |
 | PUT    | `/api/businesses/:busMstIdx` | 사업장 수정(MST) |
+| GET    | `/api/businesses/nearby?address={urlEncodedAddress}&limit={optional}` | 주소 기반 가까운 제휴 세차장 조회(거리순, 공개) |
 | GET    | `/api/businesses`           | 사업장 목록(MST) |
 | GET    | `/api/businesses/:id`       | 사업장 상세(MST + DTL) |
 | GET    | `/api/businesses/rooms/:busDtlIdx` | 룸 상세(DTL + 예약) |
@@ -202,6 +214,7 @@ CORS_ORIGIN=https://your-app-domain.com
 - [ ] `DB_PATH`: 운영 환경에서 SQLite 파일 경로 설정 (SQLite 사용 시)
 - [ ] MySQL 사용 시: `src/models/index.js`에서 MySQL 블록 주석 해제 후 `DB_HOST`, `DB_NAME`, `DB_USER`, `DB_PASSWORD` 등 설정
 - [ ] `CORS_ORIGIN`: 실제 앱 도메인으로 변경
+- [ ] `KAKAO_REST_API_KEY`: 주소 지오코딩(가까운 제휴 세차장 조회, 사업장 자동 좌표 저장)에 필요
 
 ---
 
