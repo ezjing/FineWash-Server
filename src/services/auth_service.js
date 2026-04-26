@@ -10,7 +10,8 @@ const generateToken = (memIdx) => {
 };
 
 const SaveLogic1 = async (body) => {
-  const { name, email, phone, password, user_id, address, address_detail } = body || {};
+  const { name, email, phone, password, user_id, address, address_detail } =
+    body || {};
 
   const existingUser = await Member.findOne({ where: { email } });
   if (existingUser) {
@@ -79,4 +80,3 @@ module.exports = {
   SaveLogic2,
   SearchLogic1,
 };
-

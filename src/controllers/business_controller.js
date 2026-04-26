@@ -1,297 +1,154 @@
 const BusinessService = require("../services/business_service");
-const { Ok, Fail } = require("../utils/response");
-const { HandleControllerError } = require("../utils/controller_error");
+const { Ok } = require("../utils/response");
+const AsyncHandler = require("../middlewares/asyncHandler");
 
-const SaveLogic1 = async (req, res) => {
-  try {
-    const created = await BusinessService.SaveLogic1(req.user.memIdx, req.body || {});
-    return Ok(
-      res,
-      {
-      business: {
-        id: created.bus_mst_idx,
-        busMstIdx: created.bus_mst_idx,
-        memIdx: created.mem_idx,
-        businessNumber: created.business_number,
-        companyName: created.company_name,
-        phone: created.phone,
-        email: created.email,
-        address: created.address,
-        latitude: created.latitude,
-        longitude: created.longitude,
-        businessType: created.business_type,
-        depositYn: created.deposit_yn,
-        depositAmount: created.deposit_amount,
-        remark: created.remark,
-        businessDetails: [],
-        createdAt: created.create_date,
-        updatedAt: created.update_date,
-      },
-      },
-      201,
-    );
-  } catch (error) {
-    console.error("Create business error:", error);
-    return HandleControllerError(res, error, "사업장 저장 중 오류가 발생했습니다.");
-  }
-};
+const MapRoom = (room) => ({
+  busDtlIdx: room.bus_dtl_idx,
+  busMstIdx: room.bus_mst_idx,
+  roomName: room.room_name,
+  activeYn: room.active_yn,
+  startDate: room.start_date,
+  endDate: room.end_date,
+});
 
-const SaveLogic2 = async (req, res) => {
-  try {
-    const business = await BusinessService.SaveLogic2(
-      req.user.memIdx,
-      req.params.busMstIdx,
-      req.body || {},
-    );
+const MapReservation = (r) => ({
+  resvIdx: r.resv_idx,
+  busDtlIdx: r.bus_dtl_idx,
+  memIdx: r.mem_idx,
+  vehIdx: r.veh_idx,
+  mainOption: r.main_option,
+  midOption: r.mid_option,
+  subOption: r.sub_option,
+  vehicleLocation: r.vehicle_location,
+  contractYn: r.contract_yn,
+  date: r.date,
+  time: r.time,
+  paymentAmount: r.payment_amount,
+  createdDate: r.create_date,
+  updateDate: r.update_date,
+});
 
+const MapBusinessDetail = (bd) => ({
+  id: bd.bus_dtl_idx,
+  busDtlIdx: bd.bus_dtl_idx,
+  busMstIdx: bd.bus_mst_idx,
+  roomName: bd.room_name,
+  activeYn: bd.active_yn,
+  startDate: bd.start_date,
+  endDate: bd.end_date,
+});
+
+const MapBusiness = (b) => ({
+  id: b.bus_mst_idx,
+  busMstIdx: b.bus_mst_idx,
+  memIdx: b.mem_idx,
+  businessNumber: b.business_number,
+  companyName: b.company_name,
+  phone: b.phone,
+  email: b.email,
+  address: b.address,
+  detailAddress: b.detail_address,
+  latitude: b.latitude,
+  longitude: b.longitude,
+  businessType: b.business_type,
+  depositYn: b.deposit_yn,
+  depositAmount: b.deposit_amount,
+  remark: b.remark,
+  businessDetails: Array.isArray(b.businessDetails)
+    ? b.businessDetails.map(MapBusinessDetail)
+    : [],
+  createdAt: b.create_date,
+  updatedAt: b.update_date,
+});
+
+const SaveLogic1 = AsyncHandler(async (req, res) => {
+  const created = await BusinessService.SaveLogic1(req.user.memIdx, req.body || {});
+  return Ok(res, { business: MapBusiness({ ...created, businessDetails: [] }) }, 201);
+});
+
+const SaveLogic2 = AsyncHandler(async (req, res) => {
+  const business = await BusinessService.SaveLogic2(
+    req.user.memIdx,
+    req.params.busMstIdx,
+    req.body || {},
+  );
+  return Ok(res, { business: MapBusiness({ ...business, businessDetails: [] }) });
+});
+
+const SearchLogic1 = AsyncHandler(async (req, res) => {
+  const { room, reservations, totalRevenue } = await BusinessService.SearchLogic1(
+    req.user.memIdx,
+    req.params.busDtlIdx,
+  );
+
+  return Ok(res, {
+    room: MapRoom(room),
+    reservations: Array.isArray(reservations) ? reservations.map(MapReservation) : [],
+    totalRevenue,
+  });
+});
+
+const SaveLogic3 = AsyncHandler(async (req, res) => {
+  const room = await BusinessService.SaveLogic3(req.user.memIdx, req.body || {});
+  return Ok(res, { room: MapRoom(room) }, 201);
+});
+
+const SaveLogic4 = AsyncHandler(async (req, res) => {
+  const room = await BusinessService.SaveLogic4(
+    req.user.memIdx,
+    req.params.busDtlIdx,
+    req.body || {},
+  );
+  return Ok(res, { room: MapRoom(room) });
+});
+
+const SaveLogic5 = AsyncHandler(async (req, res) => {
+  const result = await BusinessService.SaveLogic5(req.user.memIdx, req.params.busDtlIdx);
+
+  if (result.deleted === false) {
     return Ok(res, {
-      business: {
-        id: business.bus_mst_idx,
-        busMstIdx: business.bus_mst_idx,
-        memIdx: business.mem_idx,
-        businessNumber: business.business_number,
-        companyName: business.company_name,
-        phone: business.phone,
-        email: business.email,
-        address: business.address,
-        latitude: business.latitude,
-        longitude: business.longitude,
-        businessType: business.business_type,
-        depositYn: business.deposit_yn,
-        depositAmount: business.deposit_amount,
-        remark: business.remark,
-        businessDetails: [],
-        createdAt: business.create_date,
-        updatedAt: business.update_date,
-      },
+      deleted: false,
+      message: "예약 내역이 있어 삭제할 수 없어 비활성 처리했습니다.",
+      room: MapRoom(result.room),
     });
-  } catch (error) {
-    console.error("Update business error:", error);
-    return HandleControllerError(res, error, "사업장 수정 중 오류가 발생했습니다.");
   }
-};
 
-const SearchLogic1 = async (req, res) => {
-  try {
-    const { room, reservations, totalRevenue } = await BusinessService.SearchLogic1(
-      req.user.memIdx,
-      req.params.busDtlIdx,
-    );
+  return Ok(res, { deleted: true });
+});
 
-    return Ok(res, {
-      room: {
-        busDtlIdx: room.bus_dtl_idx,
-        busMstIdx: room.bus_mst_idx,
-        roomName: room.room_name,
-        activeYn: room.active_yn,
-        startDate: room.start_date,
-        endDate: room.end_date,
-      },
-      reservations: reservations.map((r) => ({
-        resvIdx: r.resv_idx,
-        busDtlIdx: r.bus_dtl_idx,
-        memIdx: r.mem_idx,
-        vehIdx: r.veh_idx,
-        mainOption: r.main_option,
-        midOption: r.mid_option,
-        subOption: r.sub_option,
-        vehicleLocation: r.vehicle_location,
-        contractYn: r.contract_yn,
-        date: r.date,
-        time: r.time,
-        paymentAmount: r.payment_amount,
-        createdDate: r.create_date,
-        updateDate: r.update_date,
-      })),
-      totalRevenue,
-    });
-  } catch (error) {
-    console.error("Get room detail error:", error);
-    return HandleControllerError(res, error, "룸 조회 중 오류가 발생했습니다.");
-  }
-};
+const SearchLogic2 = AsyncHandler(async (req, res) => {
+  const businesses = await BusinessService.SearchLogic2(req.user.memIdx);
+  return Ok(res, {
+    businesses: Array.isArray(businesses)
+      ? businesses.map((b) => {
+          const mapped = MapBusiness(b);
+          // 목록에서는 updatedAt이 필요 없으면 제거(가독성)
+          // eslint-disable-next-line no-unused-vars
+          const { updatedAt, ...rest } = mapped;
+          return rest;
+        })
+      : [],
+  });
+});
 
-const SaveLogic3 = async (req, res) => {
-  try {
-    const room = await BusinessService.SaveLogic3(req.user.memIdx, req.body || {});
-    return Ok(
-      res,
-      {
-      room: {
-        busDtlIdx: room.bus_dtl_idx,
-        busMstIdx: room.bus_mst_idx,
-        roomName: room.room_name,
-        activeYn: room.active_yn,
-        startDate: room.start_date,
-        endDate: room.end_date,
-      },
-      },
-      201,
-    );
-  } catch (error) {
-    console.error("Create room error:", error);
-    return HandleControllerError(res, error, "룸 추가 중 오류가 발생했습니다.");
-  }
-};
+const SearchLogic3 = AsyncHandler(async (req, res) => {
+  const business = await BusinessService.SearchLogic3(req.user.memIdx, req.params.id);
+  return Ok(res, { business: MapBusiness(business) });
+});
 
-const SaveLogic4 = async (req, res) => {
-  try {
-    const room = await BusinessService.SaveLogic4(
-      req.user.memIdx,
-      req.params.busDtlIdx,
-      req.body || {},
-    );
-
-    return Ok(res, {
-      room: {
-        busDtlIdx: room.bus_dtl_idx,
-        busMstIdx: room.bus_mst_idx,
-        roomName: room.room_name,
-        activeYn: room.active_yn,
-        startDate: room.start_date,
-        endDate: room.end_date,
-      },
-    });
-  } catch (error) {
-    console.error("Update room error:", error);
-    return HandleControllerError(res, error, "룸 수정 중 오류가 발생했습니다.");
-  }
-};
-
-const SaveLogic5 = async (req, res) => {
-  try {
-    const result = await BusinessService.SaveLogic5(
-      req.user.memIdx,
-      req.params.busDtlIdx,
-    );
-
-    if (result.deleted === false) {
-      const room = result.room;
-      return Ok(res, {
-        deleted: false,
-        message: "예약 내역이 있어 삭제할 수 없어 비활성 처리했습니다.",
-        room: {
-          busDtlIdx: room.bus_dtl_idx,
-          busMstIdx: room.bus_mst_idx,
-          roomName: room.room_name,
-          activeYn: room.active_yn,
-          startDate: room.start_date,
-          endDate: room.end_date,
-        },
-      });
-    }
-
-    return Ok(res, { deleted: true });
-  } catch (error) {
-    console.error("Delete room error:", error);
-    return HandleControllerError(res, error, "룸 삭제 중 오류가 발생했습니다.");
-  }
-};
-
-const SearchLogic2 = async (req, res) => {
-  try {
-    const businesses = await BusinessService.SearchLogic2(req.user.memIdx);
-    return Ok(res, {
-      businesses: businesses.map((b) => ({
-        id: b.bus_mst_idx,
-        busMstIdx: b.bus_mst_idx,
-        memIdx: b.mem_idx,
-        businessNumber: b.business_number,
-        companyName: b.company_name,
-        phone: b.phone,
-        email: b.email,
-        address: b.address,
-        latitude: b.latitude,
-        longitude: b.longitude,
-        businessType: b.business_type,
-        depositYn: b.deposit_yn,
-        depositAmount: b.deposit_amount,
-        remark: b.remark,
-        businessDetails: b.businessDetails
-          ? b.businessDetails.map((bd) => ({
-              id: bd.bus_dtl_idx,
-              busDtlIdx: bd.bus_dtl_idx,
-              busMstIdx: bd.bus_mst_idx,
-              roomName: bd.room_name,
-              activeYn: bd.active_yn,
-              startDate: bd.start_date,
-              endDate: bd.end_date,
-            }))
-          : [],
-        createdAt: b.create_date,
-      })),
-    });
-  } catch (error) {
-    console.error("Get businesses error:", error);
-    return HandleControllerError(res, error, "사업장 목록 조회 중 오류가 발생했습니다.");
-  }
-};
-
-const SearchLogic3 = async (req, res) => {
-  try {
-    const business = await BusinessService.SearchLogic3(req.user.memIdx, req.params.id);
-    return Ok(res, {
-      business: {
-        id: business.bus_mst_idx,
-        busMstIdx: business.bus_mst_idx,
-        memIdx: business.mem_idx,
-        businessNumber: business.business_number,
-        companyName: business.company_name,
-        phone: business.phone,
-        email: business.email,
-        address: business.address,
-        latitude: business.latitude,
-        longitude: business.longitude,
-        businessType: business.business_type,
-        depositYn: business.deposit_yn,
-        depositAmount: business.deposit_amount,
-        remark: business.remark,
-        businessDetails: business.businessDetails
-          ? business.businessDetails.map((bd) => ({
-              id: bd.bus_dtl_idx,
-              busDtlIdx: bd.bus_dtl_idx,
-              busMstIdx: bd.bus_mst_idx,
-              roomName: bd.room_name,
-              activeYn: bd.active_yn,
-              startDate: bd.start_date,
-              endDate: bd.end_date,
-            }))
-          : [],
-        createdAt: business.create_date,
-        updatedAt: business.update_date,
-      },
-    });
-  } catch (error) {
-    console.error("Get business error:", error);
-    return HandleControllerError(res, error, "사업장 조회 중 오류가 발생했습니다.");
-  }
-};
-
-const SaveLogic6 = async (req, res) => {
-  try {
-    await BusinessService.SaveLogic6(req.user.memIdx, req.params.busMstIdx);
-    return Ok(res, { deleted: true });
-  } catch (error) {
-    console.error("Delete business error:", error);
-    return HandleControllerError(res, error, "사업장 삭제 중 오류가 발생했습니다.");
-  }
-};
+const SaveLogic6 = AsyncHandler(async (req, res) => {
+  await BusinessService.SaveLogic6(req.user.memIdx, req.params.busMstIdx);
+  return Ok(res, { deleted: true });
+});
 
 // 좌표 기반 가까운 제휴 세차장 거리순 조회 (공개)
-const SearchLogic4 = async (req, res) => {
-  try {
-    const { lat, lng, latitude, longitude, limit } = req.query || {};
-    const userLat = lat ?? latitude;
-    const userLng = lng ?? longitude;
-    const businesses = await BusinessService.SearchLogic4(userLat, userLng, limit);
-    return res.json({ success: true, businesses });
-  } catch (error) {
-    console.error("Nearby businesses error:", error);
-    const message =
-      error?.message || "가까운 제휴 세차장 조회 중 오류가 발생했습니다.";
-    return res.status(error?.statusCode || 400).json({ success: false, message });
-  }
-};
+const SearchLogic4 = AsyncHandler(async (req, res) => {
+  const { lat, lng, latitude, longitude, limit } = req.query || {};
+  const userLat = lat ?? latitude;
+  const userLng = lng ?? longitude;
+  const businesses = await BusinessService.SearchLogic4(userLat, userLng, limit);
+  return Ok(res, { businesses });
+});
 
 module.exports = {
   SaveLogic1,
@@ -305,4 +162,3 @@ module.exports = {
   SearchLogic3,
   SearchLogic4,
 };
-

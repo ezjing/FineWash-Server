@@ -2,8 +2,15 @@ const { Reservation, Vehicle } = require("../models");
 const { AppError } = require("../utils/app_error");
 const CODES = require("../utils/error_codes");
 
+const DebugLog = (...args) => {
+  if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-console
+    console.log(...args);
+  }
+};
+
 const SearchLogic1 = async (memIdx) => {
-  return await Reservation.findAll({
+  return Reservation.findAll({
     where: { mem_idx: memIdx },
     include: [{ model: Vehicle, as: "vehicle" }],
     order: [["create_date", "DESC"]],
@@ -42,7 +49,7 @@ const SaveLogic1 = async (memIdx, body = {}) => {
 
   const userId = memIdx?.toString() || "system";
 
-  console.log("예약 생성 요청 데이터:", {
+  DebugLog("예약 생성 요청 데이터:", {
     mem_idx: memIdx,
     veh_idx: vehicleId,
     bus_dtl_idx: bus_dtl_idx || null,
@@ -77,7 +84,7 @@ const SaveLogic1 = async (memIdx, body = {}) => {
     update_id: userId,
   });
 
-  console.log("예약 생성 성공:", booking.resv_idx);
+  DebugLog("예약 생성 성공:", booking.resv_idx);
   return booking;
 };
 
@@ -113,4 +120,3 @@ module.exports = {
   SaveLogic1,
   SaveLogic2,
 };
-

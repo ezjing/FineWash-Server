@@ -137,12 +137,14 @@ CORS_ORIGIN=https://your-app-domain.com
 | GET    | `/api/auth/me`     | 현재 사용자 정보 |
 
 ### 사용자 (Members)
-| 메소드 | 경로                  | 설명          |
-| ------ | --------------------- | ------------- |
+
+| 메소드 | 경로                    | 설명          |
+| ------ | ----------------------- | ------------- |
 | PUT    | `/api/members/profile`  | 프로필 수정   |
 | PUT    | `/api/members/password` | 비밀번호 변경 |
 
 ### 차량 (Vehicles)
+
 | 메소드 | 경로                | 설명           |
 | ------ | ------------------- | -------------- |
 | GET    | `/api/vehicles`     | 차량 목록 조회 |
@@ -151,46 +153,51 @@ CORS_ORIGIN=https://your-app-domain.com
 | DELETE | `/api/vehicles/:id` | 차량 삭제      |
 
 ### 예약 (Reservations)
-| 메소드 | 경로                       | 설명           |
-| ------ | -------------------------- | -------------- |
-| GET    | `/api/reservations`       | 예약 목록 조회 |
-| GET    | `/api/reservations/:id`  | 예약 상세 조회 |
-| POST   | `/api/reservations`       | 예약 생성      |
-| PUT    | `/api/reservations/:id/cancel` | 예약 취소 |
+
+| 메소드 | 경로                           | 설명           |
+| ------ | ------------------------------ | -------------- |
+| GET    | `/api/reservations`            | 예약 목록 조회 |
+| GET    | `/api/reservations/:id`        | 예약 상세 조회 |
+| POST   | `/api/reservations`            | 예약 생성      |
+| PUT    | `/api/reservations/:id/cancel` | 예약 취소      |
 
 ### 상품 (Products)
-| 메소드 | 경로                       | 설명 |
-| ------ | -------------------------- | ---- |
-| GET    | `/api/products`           | 상품 목록 |
-| GET    | `/api/products/:id`      | 상품 상세 |
+
+| 메소드 | 경로                               | 설명            |
+| ------ | ---------------------------------- | --------------- |
+| GET    | `/api/products`                    | 상품 목록       |
+| GET    | `/api/products/:id`                | 상품 상세       |
 | GET    | `/api/products/category/:category` | 카테고리별 상품 |
 
 ### 사업장/룸 (Businesses)
-| 메소드 | 경로                         | 설명 |
-| ------ | ---------------------------- | ---- |
-| POST   | `/api/businesses`            | 사업장 등록(MST) |
-| PUT    | `/api/businesses/:busMstIdx` | 사업장 수정(MST) |
+
+| 메소드 | 경로                                                                  | 설명                                            |
+| ------ | --------------------------------------------------------------------- | ----------------------------------------------- |
+| POST   | `/api/businesses`                                                     | 사업장 등록(MST)                                |
+| PUT    | `/api/businesses/:busMstIdx`                                          | 사업장 수정(MST)                                |
 | GET    | `/api/businesses/nearby?address={urlEncodedAddress}&limit={optional}` | 주소 기반 가까운 제휴 세차장 조회(거리순, 공개) |
-| GET    | `/api/businesses`           | 사업장 목록(MST) |
-| GET    | `/api/businesses/:id`       | 사업장 상세(MST + DTL) |
-| GET    | `/api/businesses/rooms/:busDtlIdx` | 룸 상세(DTL + 예약) |
-| POST   | `/api/businesses/rooms`    | 룸 추가(DTL) |
-| PUT    | `/api/businesses/rooms/:busDtlIdx` | 룸 수정(DTL) |
-| DELETE | `/api/businesses/rooms/:busDtlIdx` | 룸 삭제(DTL) |
+| GET    | `/api/businesses`                                                     | 사업장 목록(MST)                                |
+| GET    | `/api/businesses/:id`                                                 | 사업장 상세(MST + DTL)                          |
+| GET    | `/api/businesses/rooms/:busDtlIdx`                                    | 룸 상세(DTL + 예약)                             |
+| POST   | `/api/businesses/rooms`                                               | 룸 추가(DTL)                                    |
+| PUT    | `/api/businesses/rooms/:busDtlIdx`                                    | 룸 수정(DTL)                                    |
+| DELETE | `/api/businesses/rooms/:busDtlIdx`                                    | 룸 삭제(DTL)                                    |
 
 ### 결제 검증 (Payments)
-| 메소드 | 경로                  | 설명 |
-| ------ | --------------------- | ---- |
+
+| 메소드 | 경로                   | 설명             |
+| ------ | ---------------------- | ---------------- |
 | POST   | `/api/payments/verify` | 포트원 결제 검증 |
 
 ### 세차 옵션 (Wash Options)
-| 메소드 | 경로                               | 설명 |
-| ------ | ---------------------------------- | ---- |
-| GET    | `/api/wash-options/masters`      | MST 목록 조회 |
-| POST   | `/api/wash-options/masters`      | MST 저장(신규) |
+
+| 메소드 | 경로                                    | 설명           |
+| ------ | --------------------------------------- | -------------- |
+| GET    | `/api/wash-options/masters`             | MST 목록 조회  |
+| POST   | `/api/wash-options/masters`             | MST 저장(신규) |
 | PUT    | `/api/wash-options/masters/:woptMstIdx` | MST 저장(수정) |
-| GET    | `/api/wash-options/details`      | DTL 목록 조회 |
-| POST   | `/api/wash-options/details`      | DTL 저장(신규) |
+| GET    | `/api/wash-options/details`             | DTL 목록 조회  |
+| POST   | `/api/wash-options/details`             | DTL 저장(신규) |
 | PUT    | `/api/wash-options/details/:woptDtlIdx` | DTL 저장(수정) |
 
 ---

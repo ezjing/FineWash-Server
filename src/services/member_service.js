@@ -22,7 +22,7 @@ const SaveLogic1 = async (memIdx, body) => {
     );
   }
 
-  return await Member.findByPk(memIdx);
+  return Member.findByPk(memIdx);
 };
 
 const SaveLogic2 = async (memIdx, body) => {
@@ -54,4 +54,3 @@ module.exports = {
   SaveLogic1,
   SaveLogic2,
 };
-

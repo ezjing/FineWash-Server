@@ -22,7 +22,7 @@ router.post(
       });
     }
     return await PaymentController.SaveLogic1(req, res);
-  }
+  },
 );
 
 module.exports = router;

@@ -25,6 +25,8 @@ const SaveLogic1 = async (memIdx, body = {}) => {
     phone,
     email,
     address,
+    detailAddress,
+    detail_address,
     latitude,
     longitude,
     businessType,
@@ -37,6 +39,11 @@ const SaveLogic1 = async (memIdx, body = {}) => {
   const cn = String(companyName ?? "").trim();
   const ph = String(phone ?? "").trim();
   const addr = String(address ?? "").trim();
+  const detailAddrRaw = detailAddress ?? detail_address ?? null;
+  const detailAddr =
+    detailAddrRaw != null && String(detailAddrRaw).trim() !== ""
+      ? String(detailAddrRaw).trim()
+      : null;
 
   if (!bn || !cn || !ph || !addr) {
     throw new AppError(
@@ -63,13 +70,14 @@ const SaveLogic1 = async (memIdx, body = {}) => {
     }
   }
 
-  return await BusinessMaster.create({
+  return BusinessMaster.create({
     mem_idx: memIdx,
     business_number: bn,
     company_name: cn,
     phone: ph,
     email: email != null ? String(email).trim() : null,
     address: addr,
+    detail_address: detailAddr,
     latitude: lat,
     longitude: lng,
     business_type: businessType != null ? String(businessType).trim() : null,
@@ -102,6 +110,8 @@ const SaveLogic2 = async (memIdx, busMstIdx, body = {}) => {
     phone,
     email,
     address,
+    detailAddress,
+    detail_address,
     latitude,
     longitude,
     businessType,
@@ -117,6 +127,11 @@ const SaveLogic2 = async (memIdx, busMstIdx, body = {}) => {
   if (phone != null) payload.phone = String(phone).trim();
   if (email != null) payload.email = String(email).trim();
   if (address != null) payload.address = String(address).trim();
+  if (detailAddress != null || detail_address != null) {
+    const v = detailAddress ?? detail_address;
+    const trimmed = v != null ? String(v).trim() : "";
+    payload.detail_address = trimmed === "" ? null : trimmed;
+  }
   if (latitude != null) payload.latitude = ToNumberOrNull(latitude);
   if (longitude != null) payload.longitude = ToNumberOrNull(longitude);
   if (businessType != null) payload.business_type = String(businessType).trim();
@@ -235,7 +250,7 @@ const SaveLogic3 = async (memIdx, body = {}) => {
     );
   }
 
-  return await BusinessDetail.create({
+  return BusinessDetail.create({
     bus_mst_idx: busMstIdx,
     room_name: String(roomName).trim(),
     active_yn: activeYn === "N" ? "N" : "Y",
@@ -333,7 +348,7 @@ const SaveLogic5 = async (memIdx, busDtlIdx) => {
 };
 
 const SearchLogic2 = async (memIdx) => {
-  return await BusinessMaster.findAll({
+  return BusinessMaster.findAll({
     where: { mem_idx: memIdx },
     include: [
       { model: BusinessDetail, as: "businessDetails", required: false },
@@ -412,6 +427,7 @@ const SearchLogic4 = async (latitude, longitude, limit = 20) => {
         busMstIdx: b.bus_mst_idx,
         companyName: b.company_name,
         address: b.address,
+        detailAddress: b.detail_address,
         distanceKm,
         businessDetails: details.map((bd) => ({
           busDtlIdx: bd.bus_dtl_idx,

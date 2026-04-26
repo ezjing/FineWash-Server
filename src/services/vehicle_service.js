@@ -3,14 +3,15 @@ const { AppError } = require("../utils/app_error");
 const CODES = require("../utils/error_codes");
 
 const SearchLogic1 = async (memIdx) => {
-  return await Vehicle.findAll({
+  return Vehicle.findAll({
     where: { mem_idx: memIdx },
     order: [["create_date", "DESC"]],
   });
 };
 
 const SaveLogic1 = async (memIdx, body) => {
-  const { vehicle_type, model, vehicle_number, color, year, remark } = body || {};
+  const { vehicle_type, model, vehicle_number, color, year, remark } =
+    body || {};
 
   const existingVehicle = await Vehicle.findOne({
     where: {
@@ -26,7 +27,7 @@ const SaveLogic1 = async (memIdx, body) => {
     );
   }
 
-  return await Vehicle.create({
+  return Vehicle.create({
     mem_idx: memIdx,
     vehicle_type,
     model,
@@ -38,7 +39,8 @@ const SaveLogic1 = async (memIdx, body) => {
 };
 
 const SaveLogic2 = async (memIdx, vehIdx, body) => {
-  const { vehicle_type, model, vehicle_number, color, year, remark } = body || {};
+  const { vehicle_type, model, vehicle_number, color, year, remark } =
+    body || {};
   const updateData = {};
 
   if (vehicle_type !== undefined) updateData.vehicle_type = vehicle_type;
@@ -59,7 +61,7 @@ const SaveLogic2 = async (memIdx, vehIdx, body) => {
     );
   }
 
-  return await Vehicle.findByPk(vehIdx);
+  return Vehicle.findByPk(vehIdx);
 };
 
 const SaveLogic3 = async (memIdx, vehIdx) => {
@@ -82,4 +84,3 @@ module.exports = {
   SaveLogic2,
   SaveLogic3,
 };
-

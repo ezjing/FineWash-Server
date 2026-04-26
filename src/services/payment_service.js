@@ -1,6 +1,9 @@
 const SaveLogic1 = async (body) => {
   const { imp_uid, merchant_uid, amount } = body || {};
-  console.log("결제 검증 요청:", { imp_uid, merchant_uid, amount });
+  if (process.env.NODE_ENV === "development") {
+    // eslint-disable-next-line no-console
+    console.log("결제 검증 요청:", { imp_uid, merchant_uid, amount });
+  }
 
   return {
     verified: true,
@@ -16,4 +19,3 @@ const SaveLogic1 = async (body) => {
 module.exports = {
   SaveLogic1,
 };
-

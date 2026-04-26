@@ -42,6 +42,7 @@ flutter run
 **POST** `/api/payments/verify`
 
 요청:
+
 ```json
 {
   "imp_uid": "imp_1234567890",
@@ -51,6 +52,7 @@ flutter run
 ```
 
 응답:
+
 ```json
 {
   "success": true,
@@ -107,24 +109,23 @@ flutter run
 
 ```javascript
 // 포트원 REST API 사용
-const response = await axios.get(
-  `https://api.iamport.kr/payments/${imp_uid}`,
-  {
-    headers: {
-      Authorization: `Bearer ${access_token}`,
-    },
-  }
-);
+const response = await axios.get(`https://api.iamport.kr/payments/${imp_uid}`, {
+  headers: {
+    Authorization: `Bearer ${access_token}`,
+  },
+});
 ```
 
 ## 🧪 테스트 방법
 
 1. **서버 실행 확인**
+
    ```bash
    curl http://localhost:3000/api/health
    ```
 
 2. **결제 검증 API 테스트**
+
    ```bash
    curl -X POST http://localhost:3000/api/payments/verify \
      -H "Content-Type: application/json" \

@@ -1,9 +1,25 @@
 module.exports = {
   COMMON: {
-    INTERNAL: { code: "COMMON.INTERNAL", status: 500, message: "서버 오류가 발생했습니다." },
-    NOT_FOUND: { code: "COMMON.NOT_FOUND", status: 404, message: "요청한 리소스를 찾을 수 없습니다." },
-    FORBIDDEN: { code: "COMMON.FORBIDDEN", status: 403, message: "권한이 없습니다." },
-    BAD_REQUEST: { code: "COMMON.BAD_REQUEST", status: 400, message: "요청값이 올바르지 않습니다." },
+    INTERNAL: {
+      code: "COMMON.INTERNAL",
+      status: 500,
+      message: "서버 오류가 발생했습니다.",
+    },
+    NOT_FOUND: {
+      code: "COMMON.NOT_FOUND",
+      status: 404,
+      message: "요청한 리소스를 찾을 수 없습니다.",
+    },
+    FORBIDDEN: {
+      code: "COMMON.FORBIDDEN",
+      status: 403,
+      message: "권한이 없습니다.",
+    },
+    BAD_REQUEST: {
+      code: "COMMON.BAD_REQUEST",
+      status: 400,
+      message: "요청값이 올바르지 않습니다.",
+    },
   },
   AUTH: {
     DUPLICATE_EMAIL: {
@@ -155,4 +171,3 @@ module.exports = {
     },
   },
 };
-

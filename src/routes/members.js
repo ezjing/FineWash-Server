@@ -11,10 +11,7 @@ router.put(
   authMiddleware,
   [
     body("name").optional().notEmpty().withMessage("이름을 입력해주세요."),
-    body("phone")
-      .optional()
-      .notEmpty()
-      .withMessage("전화번호를 입력해주세요."),
+    body("phone").optional().notEmpty().withMessage("전화번호를 입력해주세요."),
   ],
   async (req, res) => {
     const errors = validationResult(req);
@@ -25,7 +22,7 @@ router.put(
       });
     }
     return await MemberController.SaveLogic1(req, res);
-  }
+  },
 );
 
 // 비밀번호 변경
@@ -49,8 +46,7 @@ router.put(
       });
     }
     return await MemberController.SaveLogic2(req, res);
-  }
+  },
 );
 
 module.exports = router;
-

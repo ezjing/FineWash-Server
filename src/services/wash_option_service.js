@@ -12,9 +12,7 @@ const normalizeMstInput = (body = {}) => ({
   option_name: body.option_name ?? body.optionName ?? null,
   vehicle_type: body.vehicle_type ?? body.vehicleType ?? null,
   seq:
-    body.seq != null && String(body.seq).trim() !== ""
-      ? Number(body.seq)
-      : 0,
+    body.seq != null && String(body.seq).trim() !== "" ? Number(body.seq) : 0,
   value1:
     body.value1 != null && String(body.value1).trim() !== ""
       ? Number(body.value1)
@@ -29,9 +27,7 @@ const normalizeDtlInput = (body = {}) => ({
   option_name: body.option_name ?? body.optionName ?? null,
   vehicle_type: body.vehicle_type ?? body.vehicleType ?? null,
   seq:
-    body.seq != null && String(body.seq).trim() !== ""
-      ? Number(body.seq)
-      : 0,
+    body.seq != null && String(body.seq).trim() !== "" ? Number(body.seq) : 0,
   value1:
     body.value1 != null && String(body.value1).trim() !== ""
       ? Number(body.value1)
