@@ -60,6 +60,18 @@ const SearchLogic2 = AsyncHandler(async (req, res) => {
   return Ok(res, { count: result.count, rows: (result.rows || []).map(mapDtlRow) });
 });
 
+// 공개 조회: 제휴 세차장 옵션 조회 (인증 불필요)
+const SearchLogic3 = AsyncHandler(async (req, res) => {
+  const result = await WashOptionService.SearchLogic3(req.query);
+  return Ok(res, {
+    count: result.count,
+    rows: (result.rows || []).map((m) => ({
+      ...mapMstRow(m),
+      details: (m.washOptionDetails || []).map(mapDtlRow),
+    })),
+  });
+});
+
 const SaveLogic3 = AsyncHandler(async (req, res) => {
   const saved = await WashOptionService.SaveLogic3(req.user.memIdx, req.body || {});
   return Ok(res, { row: mapDtlRow(saved) }, 201);
@@ -89,6 +101,7 @@ module.exports = {
   SaveLogic1,
   SaveLogic2,
   SearchLogic2,
+  SearchLogic3,
   SaveLogic3,
   SaveLogic4,
   DeleteLogic1,

@@ -378,8 +378,8 @@ const SearchLogic3 = async (memIdx, busMstIdx) => {
 /**
  * 좌표 기반 가까운 제휴 세차장 조회 (공개 API 용)
  * - 클라이언트가 전달한 lat/lng를 그대로 사용
- * - business_type=PARTNER + (latitude/longitude 있는 것)만 대상으로 거리 계산
- * - 활성 룸(active_yn='Y')이 1개 이상 있는 사업장만 내려줌(UX)
+ * - (latitude/longitude 있는 것)만 대상으로 거리 계산
+ * - business_type과 무관하게 모두 조회
  */
 const SearchLogic4 = async (latitude, longitude, limit = 20) => {
   const userLat = ToNumberOrNull(latitude);
@@ -398,7 +398,6 @@ const SearchLogic4 = async (latitude, longitude, limit = 20) => {
 
   const rows = await BusinessMaster.findAll({
     where: {
-      business_type: "PARTNER",
       latitude: { [Op.ne]: null },
       longitude: { [Op.ne]: null },
     },
@@ -428,6 +427,7 @@ const SearchLogic4 = async (latitude, longitude, limit = 20) => {
         companyName: b.company_name,
         address: b.address,
         detailAddress: b.detail_address,
+        businessType: b.business_type,
         distanceKm,
         businessDetails: details.map((bd) => ({
           busDtlIdx: bd.bus_dtl_idx,

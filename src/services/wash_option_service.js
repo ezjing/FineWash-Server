@@ -403,9 +403,63 @@ const DeleteLogic2 = async (memIdx, woptDtlIdx) => {
   await existing.destroy();
 };
 
+/**
+ * SearchLogic3 (Public)
+ * 세차 옵션(MST) 목록 조회 (공개)
+ * - 조건: busMstIdx 필수, optionName/vehicleType/limit/offset
+ * - 권한: 없음(고객/비회원도 조회 가능)
+ * - include: `washOptionDetails`(DTL 목록) 포함
+ */
+const SearchLogic3 = async (query = {}) => {
+  const { busMstIdx, optionName, vehicleType, limit, offset } = query;
+
+  if (busMstIdx == null || String(busMstIdx).trim() === "") {
+    throw new AppError(
+      CODES.COMMON.BAD_REQUEST.code,
+      CODES.COMMON.BAD_REQUEST.status,
+      "busMstIdx가 필요합니다.",
+    );
+  }
+
+  const business = await BusinessMaster.findOne({
+    where: { bus_mst_idx: Number(busMstIdx) },
+  });
+  if (!business) {
+    throw new AppError(
+      CODES.COMMON.NOT_FOUND.code,
+      CODES.COMMON.NOT_FOUND.status,
+      "사업장을 찾을 수 없습니다.",
+    );
+  }
+
+  const where = { bus_mst_idx: Number(busMstIdx) };
+  if (optionName != null && String(optionName).trim() !== "")
+    where.option_name = String(optionName).trim();
+  if (vehicleType != null && String(vehicleType).trim() !== "")
+    where.vehicle_type = String(vehicleType).trim();
+
+  return await SearchInternal(WashOptionMaster, {
+    where,
+    limit,
+    offset,
+    order: [
+      ["seq", "ASC"],
+      ["wopt_mst_idx", "ASC"],
+    ],
+    include: [
+      {
+        model: WashOptionDetail,
+        as: "washOptionDetails",
+        required: false,
+      },
+    ],
+  });
+};
+
 module.exports = {
   SearchLogic1,
   SearchLogic2,
+  SearchLogic3,
   SaveLogic1,
   SaveLogic2,
   SaveLogic3,

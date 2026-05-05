@@ -4,6 +4,9 @@ const WashOptionController = require("../controllers/wash_option_controller");
 
 const router = express.Router();
 
+// 공개 조회 (고객/비회원)
+router.get("/masters/public", WashOptionController.SearchLogic3);
+
 router.get("/masters", authMiddleware, WashOptionController.SearchLogic1);
 router.post("/masters", authMiddleware, WashOptionController.SaveLogic1);
 router.put(
