@@ -1,6 +1,7 @@
 const express = require("express");
-const { body, validationResult } = require("express-validator");
+const { body } = require("express-validator");
 const authMiddleware = require("../middlewares/auth");
+const validateRequest = require("../middlewares/validateRequest");
 const ReservationController = require("../controllers/reservation_controller");
 
 const router = express.Router();
@@ -21,16 +22,8 @@ router.post(
     body("date").notEmpty().withMessage("날짜를 선택해주세요."),
     body("time").notEmpty().withMessage("시간을 선택해주세요."),
   ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: errors.array()[0].msg,
-      });
-    }
-    return await ReservationController.SaveLogic1(req, res);
-  },
+  validateRequest,
+  ReservationController.SaveLogic1,
 );
 
 // 예약 취소 (contract_yn을 'N'으로 변경)

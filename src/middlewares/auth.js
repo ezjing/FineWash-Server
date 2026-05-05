@@ -1,16 +1,19 @@
 const jwt = require("jsonwebtoken");
-const { Fail } = require("../utils/response");
 const { AppError } = require("../utils/app_error");
-// error_codes에 AUTH 관련 토큰 코드가 없어서, middleware는 고정 code 문자열 사용
+const CODES = require("../utils/error_codes");
 
 const authMiddleware = (req, res, next) => {
   try {
     const authHeader = req.headers.authorization;
 
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return Fail(res, 401, "인증 토큰이 필요합니다.", {
-        code: "AUTH.MISSING_TOKEN",
-      });
+      return next(
+        new AppError(
+          CODES.AUTH.MISSING_TOKEN.code,
+          CODES.AUTH.MISSING_TOKEN.status,
+          CODES.AUTH.MISSING_TOKEN.message,
+        ),
+      );
     }
 
     const token = authHeader.split(" ")[1];
@@ -37,10 +40,20 @@ const authMiddleware = (req, res, next) => {
     next();
   } catch (error) {
     if (error.name === "TokenExpiredError") {
-      return next(new AppError("AUTH.TOKEN_EXPIRED", 401, "토큰이 만료되었습니다."));
+      return next(
+        new AppError(
+          CODES.AUTH.TOKEN_EXPIRED.code,
+          CODES.AUTH.TOKEN_EXPIRED.status,
+          CODES.AUTH.TOKEN_EXPIRED.message,
+        ),
+      );
     }
     return next(
-      new AppError("AUTH.INVALID_TOKEN", 401, "유효하지 않은 토큰입니다."),
+      new AppError(
+        CODES.AUTH.INVALID_TOKEN.code,
+        CODES.AUTH.INVALID_TOKEN.status,
+        CODES.AUTH.INVALID_TOKEN.message,
+      ),
     );
   }
 };

@@ -1,6 +1,7 @@
 const express = require("express");
-const { body, validationResult } = require("express-validator");
+const { body } = require("express-validator");
 const authMiddleware = require("../middlewares/auth");
+const validateRequest = require("../middlewares/validateRequest");
 const MemberController = require("../controllers/member_controller");
 
 const router = express.Router();
@@ -13,16 +14,8 @@ router.put(
     body("name").optional().notEmpty().withMessage("이름을 입력해주세요."),
     body("phone").optional().notEmpty().withMessage("전화번호를 입력해주세요."),
   ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: errors.array()[0].msg,
-      });
-    }
-    return await MemberController.SaveLogic1(req, res);
-  },
+  validateRequest,
+  MemberController.SaveLogic1,
 );
 
 // 비밀번호 변경
@@ -37,16 +30,8 @@ router.put(
       .isLength({ min: 6 })
       .withMessage("새 비밀번호는 6자 이상이어야 합니다."),
   ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: errors.array()[0].msg,
-      });
-    }
-    return await MemberController.SaveLogic2(req, res);
-  },
+  validateRequest,
+  MemberController.SaveLogic2,
 );
 
 module.exports = router;

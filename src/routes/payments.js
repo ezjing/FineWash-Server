@@ -1,5 +1,6 @@
 const express = require("express");
-const { body, validationResult } = require("express-validator");
+const { body } = require("express-validator");
+const validateRequest = require("../middlewares/validateRequest");
 const PaymentController = require("../controllers/payment_controller");
 
 const router = express.Router();
@@ -13,16 +14,8 @@ router.post(
     body("merchant_uid").notEmpty().withMessage("주문 고유번호가 필요합니다."),
     body("amount").isInt({ min: 1 }).withMessage("결제 금액이 필요합니다."),
   ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: errors.array()[0].msg,
-      });
-    }
-    return await PaymentController.SaveLogic1(req, res);
-  },
+  validateRequest,
+  PaymentController.SaveLogic1,
 );
 
 module.exports = router;

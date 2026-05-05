@@ -48,16 +48,14 @@ const dummyProducts = [
 ];
 
 const SearchLogic1 = async () => {
-  let products;
+  let products = null;
   try {
     products = await Product.findAll({ order: [["created_at", "DESC"]] });
   } catch (dbError) {
     products = null;
   }
 
-  if (!products || products.length === 0) {
-    return { source: "dummy", products: dummyProducts };
-  }
+  if (!products || products.length === 0) return { source: "dummy", products: dummyProducts };
   return { source: "db", products };
 };
 

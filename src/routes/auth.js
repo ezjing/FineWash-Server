@@ -1,6 +1,7 @@
 const express = require("express");
-const { body, validationResult } = require("express-validator");
+const { body } = require("express-validator");
 const authMiddleware = require("../middlewares/auth");
+const validateRequest = require("../middlewares/validateRequest");
 const AuthController = require("../controllers/auth_controller");
 
 const router = express.Router();
@@ -16,16 +17,8 @@ router.post(
       .isLength({ min: 6 })
       .withMessage("비밀번호는 6자 이상이어야 합니다."),
   ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: errors.array()[0].msg,
-      });
-    }
-    return await AuthController.SaveLogic1(req, res);
-  },
+  validateRequest,
+  AuthController.SaveLogic1,
 );
 
 // 로그인
@@ -35,16 +28,8 @@ router.post(
     body("email").isEmail().withMessage("올바른 이메일 형식이 아닙니다."),
     body("password").notEmpty().withMessage("비밀번호를 입력해주세요."),
   ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: errors.array()[0].msg,
-      });
-    }
-    return await AuthController.SaveLogic2(req, res);
-  },
+  validateRequest,
+  AuthController.SaveLogic2,
 );
 
 // 현재 사용자 정보 조회

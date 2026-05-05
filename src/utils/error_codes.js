@@ -37,6 +37,21 @@ module.exports = {
       status: 404,
       message: "사용자를 찾을 수 없습니다.",
     },
+    MISSING_TOKEN: {
+      code: "AUTH.MISSING_TOKEN",
+      status: 401,
+      message: "인증 토큰이 필요합니다.",
+    },
+    INVALID_TOKEN: {
+      code: "AUTH.INVALID_TOKEN",
+      status: 401,
+      message: "유효하지 않은 토큰입니다.",
+    },
+    TOKEN_EXPIRED: {
+      code: "AUTH.TOKEN_EXPIRED",
+      status: 401,
+      message: "토큰이 만료되었습니다.",
+    },
   },
   MEMBER: {
     MEMBER_NOT_FOUND: {

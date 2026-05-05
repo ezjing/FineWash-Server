@@ -1,6 +1,7 @@
 const express = require("express");
-const { body, validationResult } = require("express-validator");
+const { body } = require("express-validator");
 const authMiddleware = require("../middlewares/auth");
+const validateRequest = require("../middlewares/validateRequest");
 const VehicleController = require("../controllers/vehicle_controller");
 
 const router = express.Router();
@@ -17,16 +18,8 @@ router.post(
     body("model").notEmpty().withMessage("모델명은 필수입니다."),
     body("vehicle_number").notEmpty().withMessage("차량 번호는 필수입니다."),
   ],
-  async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.status(400).json({
-        success: false,
-        message: errors.array()[0].msg,
-      });
-    }
-    return await VehicleController.SaveLogic1(req, res);
-  },
+  validateRequest,
+  VehicleController.SaveLogic1,
 );
 
 // 차량 수정

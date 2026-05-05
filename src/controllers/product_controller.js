@@ -20,20 +20,16 @@ const MapProductSummary = (p) => ({
   category: p.category,
 });
 
-const SearchLogic1 = async (req, res) => {
-  try {
-    const result = await ProductService.SearchLogic1();
-    if (result.source === "dummy") {
-      return Ok(res, { products: result.products });
-    }
-    return Ok(res, {
-      products: Array.isArray(result.products) ? result.products.map(MapProduct) : [],
-    });
-  } catch (error) {
-    const products = await ProductService.SearchLogic4();
-    return Ok(res, { products });
-  }
-};
+const SearchLogic1 = AsyncHandler(async (req, res) => {
+  const result = await ProductService.SearchLogic1();
+  const products =
+    result.source === "dummy"
+      ? result.products
+      : Array.isArray(result.products)
+        ? result.products.map(MapProduct)
+        : [];
+  return Ok(res, { products });
+});
 
 const SearchLogic2 = AsyncHandler(async (req, res) => {
   const product = await ProductService.SearchLogic2(req.params.id);
