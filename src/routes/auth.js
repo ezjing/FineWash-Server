@@ -13,9 +13,19 @@ router.post(
     body("name").notEmpty().withMessage("이름은 필수입니다."),
     body("email").isEmail().withMessage("올바른 이메일 형식이 아닙니다."),
     body("phone").notEmpty().withMessage("전화번호는 필수입니다."),
+    body("address").notEmpty().withMessage("주소는 필수입니다."),
+    body("address_detail")
+      .optional({ values: "falsy" })
+      .isString()
+      .withMessage("상세주소 형식이 올바르지 않습니다."),
     body("password")
       .isLength({ min: 6 })
       .withMessage("비밀번호는 6자 이상이어야 합니다."),
+    body("member_type")
+      .notEmpty()
+      .withMessage("회원 유형은 필수입니다.")
+      .isIn(["C", "B"])
+      .withMessage("회원 유형은 C(고객), B(사업자) 중 하나여야 합니다."),
   ],
   validateRequest,
   AuthController.SaveLogic1,

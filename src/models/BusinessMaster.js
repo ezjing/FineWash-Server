@@ -47,10 +47,10 @@ module.exports = (sequelize) => {
         field: "address",
         comment: "주소",
       },
-      detail_address: {
+      address_detail: {
         type: DataTypes.STRING(500),
         allowNull: true,
-        field: "detail_address",
+        field: "address_detail",
         comment: "상세주소",
       },
       latitude: {

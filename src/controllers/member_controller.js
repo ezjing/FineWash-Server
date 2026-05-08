@@ -13,6 +13,7 @@ const SaveLogic1 = AsyncHandler(async (req, res) => {
       email: user.email,
       phone: user.phone,
       address: user.address,
+      addressDetail: user.address_detail,
       gender: user.gender,
     },
   });

@@ -25,8 +25,7 @@ const SaveLogic1 = async (memIdx, body = {}) => {
     phone,
     email,
     address,
-    detailAddress,
-    detail_address,
+    addressDetail,
     latitude,
     longitude,
     businessType,
@@ -39,11 +38,7 @@ const SaveLogic1 = async (memIdx, body = {}) => {
   const cn = String(companyName ?? "").trim();
   const ph = String(phone ?? "").trim();
   const addr = String(address ?? "").trim();
-  const detailAddrRaw = detailAddress ?? detail_address ?? null;
-  const detailAddr =
-    detailAddrRaw != null && String(detailAddrRaw).trim() !== ""
-      ? String(detailAddrRaw).trim()
-      : null;
+  const addrDetail = String(addressDetail ?? "").trim();
 
   if (!bn || !cn || !ph || !addr) {
     throw new AppError(
@@ -77,7 +72,7 @@ const SaveLogic1 = async (memIdx, body = {}) => {
     phone: ph,
     email: email != null ? String(email).trim() : null,
     address: addr,
-    detail_address: detailAddr,
+    address_detail: addrDetail,
     latitude: lat,
     longitude: lng,
     business_type: businessType != null ? String(businessType).trim() : null,
@@ -110,8 +105,7 @@ const SaveLogic2 = async (memIdx, busMstIdx, body = {}) => {
     phone,
     email,
     address,
-    detailAddress,
-    detail_address,
+    addressDetail,
     latitude,
     longitude,
     businessType,
@@ -127,10 +121,9 @@ const SaveLogic2 = async (memIdx, busMstIdx, body = {}) => {
   if (phone != null) payload.phone = String(phone).trim();
   if (email != null) payload.email = String(email).trim();
   if (address != null) payload.address = String(address).trim();
-  if (detailAddress != null || detail_address != null) {
-    const v = detailAddress ?? detail_address;
-    const trimmed = v != null ? String(v).trim() : "";
-    payload.detail_address = trimmed === "" ? null : trimmed;
+  if (addressDetail != null) {
+    const trimmed = String(addressDetail).trim();
+    payload.address_detail = trimmed.length === 0 ? null : trimmed;
   }
   if (latitude != null) payload.latitude = ToNumberOrNull(latitude);
   if (longitude != null) payload.longitude = ToNumberOrNull(longitude);
@@ -201,11 +194,6 @@ const SearchLogic1 = async (memIdx, busDtlIdx) => {
         where: { mem_idx: memIdx },
         required: true,
       },
-      {
-        model: Reservation,
-        as: "reservations",
-        required: false,
-      },
     ],
   });
 
@@ -217,9 +205,10 @@ const SearchLogic1 = async (memIdx, busDtlIdx) => {
     );
   }
 
-  const reservations = (room.reservations || []).sort(
-    (a, b) => new Date(b.create_date) - new Date(a.create_date),
-  );
+  const reservations = await Reservation.findAll({
+    where: { bus_mst_idx: room.bus_mst_idx },
+    order: [["create_date", "DESC"]],
+  });
   const totalRevenue = reservations.reduce(
     (sum, r) => sum + (Number(r.payment_amount) || 0),
     0,
@@ -335,7 +324,7 @@ const SaveLogic5 = async (memIdx, busDtlIdx) => {
   }
 
   const reservationCount = await Reservation.count({
-    where: { bus_dtl_idx: room.bus_dtl_idx },
+    where: { bus_mst_idx: room.bus_mst_idx },
   });
 
   if (reservationCount > 0) {
@@ -426,7 +415,7 @@ const SearchLogic4 = async (latitude, longitude, limit = 20) => {
         busMstIdx: b.bus_mst_idx,
         companyName: b.company_name,
         address: b.address,
-        detailAddress: b.detail_address,
+        addressDetail: b.address_detail,
         businessType: b.business_type,
         distanceKm,
         businessDetails: details.map((bd) => ({
@@ -463,7 +452,7 @@ const SaveLogic6 = async (memIdx, busMstIdx) => {
   const roomIds = (business.businessDetails || []).map((r) => r.bus_dtl_idx);
   if (roomIds.length > 0) {
     const resvCount = await Reservation.count({
-      where: { bus_dtl_idx: { [Op.in]: roomIds } },
+      where: { bus_mst_idx: busMstIdx },
     });
     if (resvCount > 0) {
       throw new AppError(

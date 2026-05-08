@@ -13,7 +13,7 @@ const MapRoom = (room) => ({
 
 const MapReservation = (r) => ({
   resvIdx: r.resv_idx,
-  busDtlIdx: r.bus_dtl_idx,
+  busMstIdx: r.bus_mst_idx,
   memIdx: r.mem_idx,
   vehIdx: r.veh_idx,
   mainOption: r.main_option,
@@ -47,7 +47,7 @@ const MapBusiness = (b) => ({
   phone: b.phone,
   email: b.email,
   address: b.address,
-  detailAddress: b.detail_address,
+  addressDetail: b.address_detail,
   latitude: b.latitude,
   longitude: b.longitude,
   businessType: b.business_type,
@@ -62,8 +62,15 @@ const MapBusiness = (b) => ({
 });
 
 const SaveLogic1 = AsyncHandler(async (req, res) => {
-  const created = await BusinessService.SaveLogic1(req.user.memIdx, req.body || {});
-  return Ok(res, { business: MapBusiness({ ...created, businessDetails: [] }) }, 201);
+  const created = await BusinessService.SaveLogic1(
+    req.user.memIdx,
+    req.body || {},
+  );
+  return Ok(
+    res,
+    { business: MapBusiness({ ...created, businessDetails: [] }) },
+    201,
+  );
 });
 
 const SaveLogic2 = AsyncHandler(async (req, res) => {
@@ -72,24 +79,29 @@ const SaveLogic2 = AsyncHandler(async (req, res) => {
     req.params.busMstIdx,
     req.body || {},
   );
-  return Ok(res, { business: MapBusiness({ ...business, businessDetails: [] }) });
+  return Ok(res, {
+    business: MapBusiness({ ...business, businessDetails: [] }),
+  });
 });
 
 const SearchLogic1 = AsyncHandler(async (req, res) => {
-  const { room, reservations, totalRevenue } = await BusinessService.SearchLogic1(
-    req.user.memIdx,
-    req.params.busDtlIdx,
-  );
+  const { room, reservations, totalRevenue } =
+    await BusinessService.SearchLogic1(req.user.memIdx, req.params.busDtlIdx);
 
   return Ok(res, {
     room: MapRoom(room),
-    reservations: Array.isArray(reservations) ? reservations.map(MapReservation) : [],
+    reservations: Array.isArray(reservations)
+      ? reservations.map(MapReservation)
+      : [],
     totalRevenue,
   });
 });
 
 const SaveLogic3 = AsyncHandler(async (req, res) => {
-  const room = await BusinessService.SaveLogic3(req.user.memIdx, req.body || {});
+  const room = await BusinessService.SaveLogic3(
+    req.user.memIdx,
+    req.body || {},
+  );
   return Ok(res, { room: MapRoom(room) }, 201);
 });
 
@@ -103,7 +115,10 @@ const SaveLogic4 = AsyncHandler(async (req, res) => {
 });
 
 const SaveLogic5 = AsyncHandler(async (req, res) => {
-  const result = await BusinessService.SaveLogic5(req.user.memIdx, req.params.busDtlIdx);
+  const result = await BusinessService.SaveLogic5(
+    req.user.memIdx,
+    req.params.busDtlIdx,
+  );
 
   if (result.deleted === false) {
     return Ok(res, {
@@ -132,7 +147,10 @@ const SearchLogic2 = AsyncHandler(async (req, res) => {
 });
 
 const SearchLogic3 = AsyncHandler(async (req, res) => {
-  const business = await BusinessService.SearchLogic3(req.user.memIdx, req.params.id);
+  const business = await BusinessService.SearchLogic3(
+    req.user.memIdx,
+    req.params.id,
+  );
   return Ok(res, { business: MapBusiness(business) });
 });
 
@@ -146,7 +164,11 @@ const SearchLogic4 = AsyncHandler(async (req, res) => {
   const { lat, lng, latitude, longitude, limit } = req.query || {};
   const userLat = lat ?? latitude;
   const userLng = lng ?? longitude;
-  const businesses = await BusinessService.SearchLogic4(userLat, userLng, limit);
+  const businesses = await BusinessService.SearchLogic4(
+    userLat,
+    userLng,
+    limit,
+  );
   return Ok(res, { businesses });
 });
 

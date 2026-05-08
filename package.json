@@ -4,6 +4,7 @@
   "description": "출장세차 앱 백엔드 서버",
   "main": "src/server.js",
   "scripts": {
+    "init:sqlite": "node scripts/init-sqlite.js",
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
     "dev:watch": "NODE_ENV=development nodemon src/server.js",

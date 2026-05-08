@@ -58,9 +58,19 @@ const SaveLogic2 = AsyncHandler(async (req, res) => {
   });
 });
 
+// 예약 거절
+const SaveLogic3 = AsyncHandler(async (req, res) => {
+  const booking = await ReservationService.SaveLogic3(req.params.id);
+  return Ok(res, {
+    message: "예약이 거절되었습니다.",
+    reservation: { id: booking.resv_idx, resvIdx: booking.resv_idx, contractYn: booking.contract_yn },
+  });
+});
+
 module.exports = {
   SearchLogic1,
   SearchLogic2,
   SaveLogic1,
   SaveLogic2,
+  SaveLogic3,
 };

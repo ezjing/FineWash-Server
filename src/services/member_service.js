@@ -3,12 +3,13 @@ const { AppError } = require("../utils/app_error");
 const CODES = require("../utils/error_codes");
 
 const SaveLogic1 = async (memIdx, body) => {
-  const { name, phone, address, gender } = body || {};
+  const { name, phone, address, address_detail, gender } = body || {};
   const updateData = {};
 
   if (name) updateData.name = name;
   if (phone) updateData.phone = phone;
   if (address !== undefined) updateData.address = address;
+  if (address_detail !== undefined) updateData.address_detail = address_detail;
   if (gender !== undefined) updateData.gender = gender;
 
   const [updatedCount] = await Member.update(updateData, {

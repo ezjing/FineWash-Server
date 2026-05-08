@@ -41,7 +41,7 @@ const SaveLogic1 = async (memIdx, body = {}) => {
     vehicle_location,
     date,
     time,
-    bus_dtl_idx,
+    bus_mst_idx,
     imp_uid,
     merchant_uid,
     payment_amount,
@@ -52,7 +52,7 @@ const SaveLogic1 = async (memIdx, body = {}) => {
   DebugLog("예약 생성 요청 데이터:", {
     mem_idx: memIdx,
     veh_idx: vehicleId,
-    bus_dtl_idx: bus_dtl_idx || null,
+    bus_mst_idx: bus_mst_idx,
     main_option: main_option,
     mid_option: mid_option || null,
     sub_option: sub_option || null,
@@ -69,7 +69,7 @@ const SaveLogic1 = async (memIdx, body = {}) => {
   const booking = await Reservation.create({
     mem_idx: memIdx,
     veh_idx: vehicleId,
-    bus_dtl_idx: bus_dtl_idx || null,
+    bus_mst_idx: bus_mst_idx,
     main_option: main_option,
     mid_option: mid_option || null,
     sub_option: sub_option || null,
@@ -114,9 +114,39 @@ const SaveLogic2 = async (memIdx, resvIdx) => {
   return booking;
 };
 
+// 예약 거절 (contract_yn을 'N'으로 변경)
+const SaveLogic3 = async (resvIdx) => {
+  const booking = await Reservation.findOne({
+    where: { resv_idx: resvIdx },
+  });
+
+  if (!booking) {
+    throw new AppError(
+      CODES.RESERVATION.NOT_FOUND_RESERVATION.code,
+      CODES.RESERVATION.NOT_FOUND_RESERVATION.status,
+      CODES.RESERVATION.NOT_FOUND_RESERVATION.message,
+    );
+  }
+
+  // 이미 거절된 경우
+  if (booking.contract_yn === "N") {
+    throw new AppError(
+      CODES.RESERVATION.ALREADY_CANCELLED.code,
+      CODES.RESERVATION.ALREADY_CANCELLED.status,
+      "이미 거절된 예약입니다.",
+    );
+  }
+
+  // 완료(C) 등 다른 상태가 있다면 여기서 정책적으로 막을 수 있음
+  booking.contract_yn = "N";
+  await booking.save();
+  return booking;
+};
+
 module.exports = {
   SearchLogic1,
   SearchLogic2,
   SaveLogic1,
   SaveLogic2,
+  SaveLogic3,
 };

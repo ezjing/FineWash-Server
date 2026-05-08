@@ -47,7 +47,16 @@ cp .env.development .env
 cp .env.production .env
 ```
 
-### 3. 서버 실행
+### 3. SQLite 파일 생성(로컬 개발)
+
+로컬 개발(기본 SQLite)에서는 DB 파일이 필요합니다. 아래 스크립트는 `.env`의 `DB_PATH`(기본 `./fineWash.db`) 위치에 **SQLite 파일을 생성**합니다.
+
+```bash
+# SQLite 파일 생성
+npm run init:sqlite
+```
+
+### 4. 서버 실행
 
 ```bash
 # 개발 모드 (nodemon - 파일 변경 시 자동 재시작)

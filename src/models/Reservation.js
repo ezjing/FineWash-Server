@@ -11,11 +11,11 @@ module.exports = (sequelize) => {
         field: "resv_idx",
         comment: "예약 인덱스",
       },
-      bus_dtl_idx: {
+      bus_mst_idx: {
         type: DataTypes.INTEGER,
         allowNull: true,
-        field: "bus_dtl_idx",
-        comment: "사업장 DTL 인덱스",
+        field: "bus_mst_idx",
+        comment: "사업장 MST 인덱스",
       },
       mem_idx: {
         type: DataTypes.INTEGER,
@@ -57,7 +57,7 @@ module.exports = (sequelize) => {
         type: DataTypes.CHAR(1),
         defaultValue: "Y",
         field: "contract_yn",
-        comment: "계약체결YN (기본값 승낙)",
+        comment: "계약체결 (승낙:Y, 거절:N, 완료:C)(기본값:승낙)",
       },
       date: {
         type: DataTypes.DATEONLY,

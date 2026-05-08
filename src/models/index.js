@@ -59,14 +59,14 @@ ReservationSchedule.belongsTo(Reservation, {
   as: "reservation",
 });
 
-// BusinessDetail - Reservation (1:N)
-BusinessDetail.hasMany(Reservation, {
-  foreignKey: "bus_dtl_idx",
+// BusinessMaster - Reservation (1:N)
+BusinessMaster.hasMany(Reservation, {
+  foreignKey: "bus_mst_idx",
   as: "reservations",
 });
-Reservation.belongsTo(BusinessDetail, {
-  foreignKey: "bus_dtl_idx",
-  as: "businessDetail",
+Reservation.belongsTo(BusinessMaster, {
+  foreignKey: "bus_mst_idx",
+  as: "businessMaster",
 });
 
 // BusinessDetail - ScheduleMaster (1:N)

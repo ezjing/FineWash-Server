@@ -10,8 +10,16 @@ const generateToken = (memIdx) => {
 };
 
 const SaveLogic1 = async (body) => {
-  const { name, email, phone, password, user_id, address, address_detail } =
-    body || {};
+  const {
+    name,
+    email,
+    phone,
+    password,
+    user_id,
+    address,
+    address_detail,
+    member_type,
+  } = body || {};
 
   const existingUser = await Member.findOne({ where: { email } });
   if (existingUser) {
@@ -22,13 +30,14 @@ const SaveLogic1 = async (body) => {
     );
   }
 
-  const fullAddress = `${address} ${address_detail}`;
   const user = await Member.create({
     name,
     email,
     phone,
     password,
-    address: fullAddress,
+    address,
+    address_detail,
+    member_type,
     user_id,
   });
 

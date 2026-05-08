@@ -13,6 +13,11 @@ router.put(
   [
     body("name").optional().notEmpty().withMessage("이름을 입력해주세요."),
     body("phone").optional().notEmpty().withMessage("전화번호를 입력해주세요."),
+    body("address").optional().isString().withMessage("주소 형식이 올바르지 않습니다."),
+    body("address_detail")
+      .optional({ values: "falsy" })
+      .isString()
+      .withMessage("상세주소 형식이 올바르지 않습니다."),
   ],
   validateRequest,
   MemberController.SaveLogic1,

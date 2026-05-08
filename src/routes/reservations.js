@@ -29,4 +29,7 @@ router.post(
 // 예약 취소 (contract_yn을 'N'으로 변경)
 router.put("/:id/cancel", authMiddleware, ReservationController.SaveLogic2);
 
+// 예약 거절 (contract_yn을 'N'으로 변경)
+router.put("/:id/reject", authMiddleware, ReservationController.SaveLogic3);
+
 module.exports = router;
