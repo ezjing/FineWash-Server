@@ -29,6 +29,18 @@ router.post(
 // 예약 취소 (contract_yn을 'N'으로 변경)
 router.put("/:id/cancel", authMiddleware, ReservationController.SaveLogic2);
 
+// 예약 승인 (contract_yn을 'Y'로 변경)
+router.put(
+  "/:id/approve",
+  authMiddleware,
+  [
+    body("date").notEmpty().withMessage("날짜를 선택해주세요."),
+    body("time").notEmpty().withMessage("시간을 선택해주세요."),
+  ],
+  validateRequest,
+  ReservationController.SaveLogic4,
+);
+
 // 예약 거절 (contract_yn을 'N'으로 변경)
 router.put("/:id/reject", authMiddleware, ReservationController.SaveLogic3);
 

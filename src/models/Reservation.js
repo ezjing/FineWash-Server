@@ -55,9 +55,10 @@ module.exports = (sequelize) => {
       },
       contract_yn: {
         type: DataTypes.CHAR(1),
-        defaultValue: "Y",
+        allowNull: true,
+        defaultValue: null,
         field: "contract_yn",
-        comment: "계약체결 (승낙:Y, 거절:N, 완료:C)(기본값:승낙)",
+        comment: "계약체결 (승낙:Y, 거절:N, 완료:C)(기본값:대기)",
       },
       date: {
         type: DataTypes.DATEONLY,

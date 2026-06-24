@@ -76,7 +76,6 @@ const SaveLogic1 = async (memIdx, body = {}) => {
     vehicle_location: vehicle_location || null,
     date,
     time,
-    contract_yn: "Y",
     imp_uid: imp_uid || null,
     merchant_uid: merchant_uid || null,
     payment_amount: payment_amount || null,
@@ -143,10 +142,57 @@ const SaveLogic3 = async (resvIdx) => {
   return booking;
 };
 
+// 예약 승인 (contract_yn을 'Y'로 변경)
+const SaveLogic4 = async (resvIdx, body = {}) => {
+  const { date, time } = body;
+  const booking = await Reservation.findOne({
+    where: { resv_idx: resvIdx },
+  });
+
+  if (!booking) {
+    throw new AppError(
+      CODES.RESERVATION.NOT_FOUND_RESERVATION.code,
+      CODES.RESERVATION.NOT_FOUND_RESERVATION.status,
+      CODES.RESERVATION.NOT_FOUND_RESERVATION.message,
+    );
+  }
+
+  if (booking.contract_yn === "N") {
+    throw new AppError(
+      CODES.RESERVATION.ALREADY_CANCELLED.code,
+      CODES.RESERVATION.ALREADY_CANCELLED.status,
+      "이미 거절된 예약입니다.",
+    );
+  }
+
+  if (booking.contract_yn === "C") {
+    throw new AppError(
+      CODES.RESERVATION.ALREADY_CANCELLED.code,
+      CODES.RESERVATION.ALREADY_CANCELLED.status,
+      "이미 완료된 예약입니다.",
+    );
+  }
+
+  if (booking.contract_yn === "Y") {
+    throw new AppError(
+      CODES.RESERVATION.ALREADY_CANCELLED.code,
+      CODES.RESERVATION.ALREADY_CANCELLED.status,
+      "이미 승인된 예약입니다.",
+    );
+  }
+
+  booking.contract_yn = "Y";
+  if (date) booking.date = date;
+  if (time) booking.time = time;
+  await booking.save();
+  return booking;
+};
+
 module.exports = {
   SearchLogic1,
   SearchLogic2,
   SaveLogic1,
   SaveLogic2,
   SaveLogic3,
+  SaveLogic4,
 };

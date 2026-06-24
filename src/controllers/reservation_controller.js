@@ -67,10 +67,26 @@ const SaveLogic3 = AsyncHandler(async (req, res) => {
   });
 });
 
+// 예약 승인
+const SaveLogic4 = AsyncHandler(async (req, res) => {
+  const booking = await ReservationService.SaveLogic4(req.params.id, req.body);
+  return Ok(res, {
+    message: "예약이 승인되었습니다.",
+    reservation: {
+      id: booking.resv_idx,
+      resvIdx: booking.resv_idx,
+      contractYn: booking.contract_yn,
+      date: booking.date,
+      time: booking.time,
+    },
+  });
+});
+
 module.exports = {
   SearchLogic1,
   SearchLogic2,
   SaveLogic1,
   SaveLogic2,
   SaveLogic3,
+  SaveLogic4,
 };
