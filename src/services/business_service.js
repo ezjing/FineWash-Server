@@ -464,16 +464,22 @@ const SaveLogic6 = async (memIdx, busMstIdx) => {
   }
 
   await sequelize.transaction(async (t) => {
-    if (roomIds.length > 0) {
+    const schMstRows = await ScheduleMaster.findAll({
+      attributes: ["sch_mst_idx"],
+      where: { bus_mst_idx: busMstIdx },
+      transaction: t,
+    });
+    const schMstIds = schMstRows.map((row) => row.sch_mst_idx);
+    if (schMstIds.length > 0) {
       await ScheduleDetail.destroy({
-        where: { bus_dtl_idx: { [Op.in]: roomIds } },
-        transaction: t,
-      });
-      await ScheduleMaster.destroy({
-        where: { bus_dtl_idx: { [Op.in]: roomIds } },
+        where: { sch_mst_idx: { [Op.in]: schMstIds } },
         transaction: t,
       });
     }
+    await ScheduleMaster.destroy({
+      where: { bus_mst_idx: busMstIdx },
+      transaction: t,
+    });
 
     const woptRows = await WashOptionMaster.findAll({
       attributes: ["wopt_mst_idx"],

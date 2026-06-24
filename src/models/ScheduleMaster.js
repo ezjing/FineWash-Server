@@ -11,11 +11,11 @@ module.exports = (sequelize) => {
         field: "sch_mst_idx",
         comment: "스케줄 MST 인덱스",
       },
-      bus_dtl_idx: {
+      bus_mst_idx: {
         type: DataTypes.INTEGER,
         allowNull: true,
-        field: "bus_dtl_idx",
-        comment: "사업장 DTL 인덱스",
+        field: "bus_mst_idx",
+        comment: "사업장 MST 인덱스",
       },
       monday_yn: {
         type: DataTypes.CHAR(1),

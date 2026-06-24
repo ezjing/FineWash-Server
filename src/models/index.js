@@ -69,14 +69,14 @@ Reservation.belongsTo(BusinessMaster, {
   as: "businessMaster",
 });
 
-// BusinessDetail - ScheduleMaster (1:N)
-BusinessDetail.hasMany(ScheduleMaster, {
-  foreignKey: "bus_dtl_idx",
+// BusinessMaster - ScheduleMaster (1:N)
+BusinessMaster.hasMany(ScheduleMaster, {
+  foreignKey: "bus_mst_idx",
   as: "scheduleMasters",
 });
-ScheduleMaster.belongsTo(BusinessDetail, {
-  foreignKey: "bus_dtl_idx",
-  as: "businessDetail",
+ScheduleMaster.belongsTo(BusinessMaster, {
+  foreignKey: "bus_mst_idx",
+  as: "businessMaster",
 });
 
 // ScheduleMaster - ScheduleDetail (1:N)
@@ -87,16 +87,6 @@ ScheduleMaster.hasMany(ScheduleDetail, {
 ScheduleDetail.belongsTo(ScheduleMaster, {
   foreignKey: "sch_mst_idx",
   as: "scheduleMaster",
-});
-
-// BusinessDetail - ScheduleDetail (1:N)
-BusinessDetail.hasMany(ScheduleDetail, {
-  foreignKey: "bus_dtl_idx",
-  as: "scheduleDetails",
-});
-ScheduleDetail.belongsTo(BusinessDetail, {
-  foreignKey: "bus_dtl_idx",
-  as: "businessDetail",
 });
 
 // BusinessMaster - WashOptionMaster (1:N)
