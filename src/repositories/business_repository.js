@@ -16,21 +16,16 @@ const AssertBusinessOwner = async (memIdx, busMstIdx) => {
   const business = await BusinessMaster.findOne({
     where: { bus_mst_idx: busMstIdx, mem_idx: memIdx },
   });
-  if (!business) ThrowFromCode(CODES.WASH_OPTION.FORBIDDEN_BUSINESS);
+  if (!business) ThrowFromCode(CODES.BUSINESS.FORBIDDEN);
   return business;
 };
 
 /** 공개 API용 사업장 존재 여부 확인 */
-const FindById = async (busMstIdx, message) => {
+const FindById = async (busMstIdx) => {
   const business = await BusinessMaster.findOne({
     where: { bus_mst_idx: Number(busMstIdx) },
   });
-  if (!business) {
-    ThrowFromCode(
-      CODES.COMMON.NOT_FOUND,
-      message ?? CODES.COMMON.NOT_FOUND.message,
-    );
-  }
+  if (!business) ThrowFromCode(CODES.BUSINESS.NOT_FOUND_BUSINESS);
   return business;
 };
 

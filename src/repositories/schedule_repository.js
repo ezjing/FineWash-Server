@@ -17,7 +17,7 @@ const FindOwnedMaster = async (memIdx, schMstIdx) => {
       },
     ],
   });
-  if (!master) ThrowFromCode(CODES.COMMON.NOT_FOUND);
+  if (!master) ThrowFromCode(CODES.SCHEDULE.NOT_FOUND_MASTER);
   return master;
 };
 
@@ -39,7 +39,7 @@ const FindOwnedDetail = async (memIdx, schDtlIdx) => {
       },
     ],
   });
-  if (!detail) ThrowFromCode(CODES.COMMON.NOT_FOUND);
+  if (!detail) ThrowFromCode(CODES.SCHEDULE.NOT_FOUND_DETAIL);
   return detail;
 };
 

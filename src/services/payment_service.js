@@ -5,7 +5,7 @@ const SaveLogic1 = async (body) => {
   const { imp_uid, merchant_uid, amount } = body || {};
 
   if (!imp_uid || !merchant_uid || amount == null) {
-    ThrowFromCode(CODES.COMMON.BAD_REQUEST, "결제 검증에 필요한 정보가 부족합니다.");
+    ThrowFromCode(CODES.PAYMENT.MISSING_VERIFY_FIELDS);
   }
 
   if (process.env.NODE_ENV === "development") {

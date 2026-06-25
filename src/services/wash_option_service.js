@@ -187,10 +187,10 @@ const SearchLogic3 = async (query = {}) => {
   const { busMstIdx, optionName, vehicleType, limit, offset } = query;
 
   if (busMstIdx == null || String(busMstIdx).trim() === "") {
-    ThrowFromCode(CODES.COMMON.BAD_REQUEST, "busMstIdx가 필요합니다.");
+    ThrowFromCode(CODES.WASH_OPTION.MISSING_BUS_MST_IDX);
   }
 
-  await FindById(busMstIdx, "사업장을 찾을 수 없습니다.");
+  await FindById(busMstIdx);
 
   const where = { bus_mst_idx: Number(busMstIdx) };
   if (optionName != null && String(optionName).trim() !== "")

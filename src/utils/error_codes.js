@@ -1,3 +1,10 @@
+/**
+ * API 공통 에러 코드 정의
+ *
+ * 구조: { code, status, message }
+ * - 서비스/저장소: ThrowFromCode(CODES.DOMAIN.KEY)
+ * - 미들웨어: next(ToAppError(CODES.DOMAIN.KEY))
+ */
 module.exports = {
   COMMON: {
     INTERNAL: {
@@ -88,6 +95,21 @@ module.exports = {
       status: 400,
       message: "이미 취소된 예약입니다.",
     },
+    ALREADY_REJECTED: {
+      code: "RESERVATION.ALREADY_REJECTED",
+      status: 400,
+      message: "이미 거절된 예약입니다.",
+    },
+    ALREADY_COMPLETED: {
+      code: "RESERVATION.ALREADY_COMPLETED",
+      status: 400,
+      message: "이미 완료된 예약입니다.",
+    },
+    ALREADY_APPROVED: {
+      code: "RESERVATION.ALREADY_APPROVED",
+      status: 400,
+      message: "이미 승인된 예약입니다.",
+    },
   },
   BUSINESS: {
     REQUIRED_FIELDS: {
@@ -99,6 +121,16 @@ module.exports = {
       code: "BUSINESS.NOT_FOUND_BUSINESS",
       status: 404,
       message: "사업장을 찾을 수 없습니다.",
+    },
+    FORBIDDEN: {
+      code: "BUSINESS.FORBIDDEN",
+      status: 403,
+      message: "해당 사업장에 대한 권한이 없습니다.",
+    },
+    MISSING_COORDINATES: {
+      code: "BUSINESS.MISSING_COORDINATES",
+      status: 400,
+      message: "lat/lng(또는 latitude/longitude)가 필요합니다.",
     },
     EMPTY_BUSINESS_NUMBER: {
       code: "BUSINESS.EMPTY_BUSINESS_NUMBER",
@@ -146,6 +178,48 @@ module.exports = {
       message: "예약 내역이 있는 사업장은 삭제할 수 없습니다.",
     },
   },
+  SCHEDULE: {
+    MISSING_BUS_MST_IDX: {
+      code: "SCHEDULE.MISSING_BUS_MST_IDX",
+      status: 400,
+      message: "busMstIdx는 필수입니다.",
+    },
+    MISSING_SCH_MST_IDX: {
+      code: "SCHEDULE.MISSING_SCH_MST_IDX",
+      status: 400,
+      message: "schMstIdx는 필수입니다.",
+    },
+    MISSING_SCOPE: {
+      code: "SCHEDULE.MISSING_SCOPE",
+      status: 400,
+      message: "schMstIdx 또는 busMstIdx는 필수입니다.",
+    },
+    MISSING_YEAR_MONTH: {
+      code: "SCHEDULE.MISSING_YEAR_MONTH",
+      status: 400,
+      message: "year, month는 필수입니다.",
+    },
+    MISSING_SCHEDULE_DATE: {
+      code: "SCHEDULE.MISSING_SCHEDULE_DATE",
+      status: 400,
+      message: "scheduleDate는 필수입니다.",
+    },
+    MISSING_OVERTIME_HOURS: {
+      code: "SCHEDULE.MISSING_OVERTIME_HOURS",
+      status: 400,
+      message: "연장근무는 시작/종료 시간이 필요합니다.",
+    },
+    NOT_FOUND_MASTER: {
+      code: "SCHEDULE.NOT_FOUND_MASTER",
+      status: 404,
+      message: "스케줄(MST)을 찾을 수 없습니다.",
+    },
+    NOT_FOUND_DETAIL: {
+      code: "SCHEDULE.NOT_FOUND_DETAIL",
+      status: 404,
+      message: "스케줄(DTL)을 찾을 수 없습니다.",
+    },
+  },
   PRODUCT: {
     NOT_FOUND_PRODUCT: {
       code: "PRODUCT.NOT_FOUND_PRODUCT",
@@ -181,6 +255,11 @@ module.exports = {
     },
   },
   PAYMENT: {
+    MISSING_VERIFY_FIELDS: {
+      code: "PAYMENT.MISSING_VERIFY_FIELDS",
+      status: 400,
+      message: "결제 검증에 필요한 정보가 부족합니다.",
+    },
     VERIFICATION_FAILED: {
       code: "PAYMENT.VERIFICATION_FAILED",
       status: 400,
@@ -188,11 +267,6 @@ module.exports = {
     },
   },
   WASH_OPTION: {
-    FORBIDDEN_BUSINESS: {
-      code: "WASH_OPTION.FORBIDDEN_BUSINESS",
-      status: 403,
-      message: "해당 사업장에 대한 권한이 없습니다.",
-    },
     MISSING_BUS_MST_IDX: {
       code: "WASH_OPTION.MISSING_BUS_MST_IDX",
       status: 400,

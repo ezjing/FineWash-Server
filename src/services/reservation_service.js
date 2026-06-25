@@ -70,10 +70,7 @@ const SaveLogic3 = async (resvIdx) => {
   const booking = await ReservationRepository.FindById(resvIdx);
 
   if (booking.contract_yn === "N") {
-    ThrowFromCode(
-      CODES.RESERVATION.ALREADY_CANCELLED,
-      "이미 거절된 예약입니다.",
-    );
+    ThrowFromCode(CODES.RESERVATION.ALREADY_REJECTED);
   }
 
   booking.contract_yn = "N";
@@ -86,22 +83,13 @@ const SaveLogic4 = async (resvIdx, body = {}) => {
   const booking = await ReservationRepository.FindById(resvIdx);
 
   if (booking.contract_yn === "N") {
-    ThrowFromCode(
-      CODES.RESERVATION.ALREADY_CANCELLED,
-      "이미 거절된 예약입니다.",
-    );
+    ThrowFromCode(CODES.RESERVATION.ALREADY_REJECTED);
   }
   if (booking.contract_yn === "C") {
-    ThrowFromCode(
-      CODES.RESERVATION.ALREADY_CANCELLED,
-      "이미 완료된 예약입니다.",
-    );
+    ThrowFromCode(CODES.RESERVATION.ALREADY_COMPLETED);
   }
   if (booking.contract_yn === "Y") {
-    ThrowFromCode(
-      CODES.RESERVATION.ALREADY_CANCELLED,
-      "이미 승인된 예약입니다.",
-    );
+    ThrowFromCode(CODES.RESERVATION.ALREADY_APPROVED);
   }
 
   booking.contract_yn = "Y";

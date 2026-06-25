@@ -43,7 +43,7 @@ const getMonthRange = (year, month) => {
 const SearchLogic1 = async (memIdx, query = {}) => {
   const busMstIdx = query.busMstIdx ?? query.bus_mst_idx;
   if (busMstIdx == null || String(busMstIdx).trim() === "") {
-    ThrowFromCode(CODES.WASH_OPTION.MISSING_BUS_MST_IDX);
+    ThrowFromCode(CODES.SCHEDULE.MISSING_BUS_MST_IDX);
   }
 
   await AssertBusinessOwner(memIdx, Number(busMstIdx));
@@ -60,7 +60,7 @@ const SearchLogic1 = async (memIdx, query = {}) => {
 const SaveLogic1 = async (memIdx, body = {}) => {
   const busMstIdx = body.bus_mst_idx ?? body.busMstIdx;
   if (busMstIdx == null) {
-    ThrowFromCode(CODES.WASH_OPTION.MISSING_BUS_MST_IDX);
+    ThrowFromCode(CODES.SCHEDULE.MISSING_BUS_MST_IDX);
   }
 
   await AssertBusinessOwner(memIdx, Number(busMstIdx));
@@ -100,10 +100,7 @@ const SearchLogic2 = async (memIdx, query = {}) => {
   if (schMstIdx == null) {
     const busMstIdx = query.busMstIdx ?? query.bus_mst_idx;
     if (busMstIdx == null) {
-      ThrowFromCode(
-        CODES.COMMON.BAD_REQUEST,
-        "schMstIdx 또는 busMstIdx는 필수입니다.",
-      );
+      ThrowFromCode(CODES.SCHEDULE.MISSING_SCOPE);
     }
     await AssertBusinessOwner(memIdx, Number(busMstIdx));
     const master = await ScheduleMaster.findOne({
@@ -119,7 +116,7 @@ const SearchLogic2 = async (memIdx, query = {}) => {
   }
 
   if (year == null || month == null) {
-    ThrowFromCode(CODES.COMMON.BAD_REQUEST, "year, month는 필수입니다.");
+    ThrowFromCode(CODES.SCHEDULE.MISSING_YEAR_MONTH);
   }
 
   const { startDate, endDate } = getMonthRange(year, month);
@@ -138,24 +135,21 @@ const SearchLogic2 = async (memIdx, query = {}) => {
 const SaveLogic3 = async (memIdx, body = {}) => {
   const schMstIdx = body.sch_mst_idx ?? body.schMstIdx;
   if (schMstIdx == null) {
-    ThrowFromCode(CODES.COMMON.BAD_REQUEST, "schMstIdx는 필수입니다.");
+    ThrowFromCode(CODES.SCHEDULE.MISSING_SCH_MST_IDX);
   }
 
   await ScheduleRepository.FindOwnedMaster(memIdx, Number(schMstIdx));
 
   const fields = normalizeDtlInput(body);
   if (!fields.schedule_date) {
-    ThrowFromCode(CODES.COMMON.BAD_REQUEST, "scheduleDate는 필수입니다.");
+    ThrowFromCode(CODES.SCHEDULE.MISSING_SCHEDULE_DATE);
   }
 
   if (fields.holiday_yn === "Y") {
     fields.start_time = null;
     fields.end_time = null;
   } else if (!fields.start_time || !fields.end_time) {
-    ThrowFromCode(
-      CODES.COMMON.BAD_REQUEST,
-      "연장근무는 시작/종료 시간이 필요합니다.",
-    );
+    ThrowFromCode(CODES.SCHEDULE.MISSING_OVERTIME_HOURS);
   }
 
   const existing = await ScheduleDetail.findOne({
@@ -196,10 +190,7 @@ const SaveLogic4 = async (memIdx, schDtlIdx, body = {}) => {
     (fields.start_time == null && existing.start_time == null) ||
     (fields.end_time == null && existing.end_time == null)
   ) {
-    ThrowFromCode(
-      CODES.COMMON.BAD_REQUEST,
-      "연장근무는 시작/종료 시간이 필요합니다.",
-    );
+    ThrowFromCode(CODES.SCHEDULE.MISSING_OVERTIME_HOURS);
   }
 
   return await existing.update({

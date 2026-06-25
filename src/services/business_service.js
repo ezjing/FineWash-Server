@@ -262,10 +262,7 @@ const SearchLogic4 = async (latitude, longitude, limit = 20) => {
   const userLat = ToNumberOrNull(latitude);
   const userLng = ToNumberOrNull(longitude);
   if (userLat == null || userLng == null) {
-    ThrowFromCode(
-      CODES.BUSINESS.REQUIRED_FIELDS,
-      "lat/lng(또는 latitude/longitude)가 필요합니다.",
-    );
+    ThrowFromCode(CODES.BUSINESS.MISSING_COORDINATES);
   }
 
   const safeLimit = Number.isFinite(Number(limit))
