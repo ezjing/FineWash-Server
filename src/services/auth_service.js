@@ -1,7 +1,8 @@
 const jwt = require("jsonwebtoken");
 const { Member } = require("../models");
-const { AppError } = require("../utils/app_error");
+const { ThrowFromCode } = require("../utils/app_error");
 const CODES = require("../utils/error_codes");
+const MemberRepository = require("../repositories/member_repository");
 
 const generateToken = (memIdx) => {
   return jwt.sign({ memIdx }, process.env.JWT_SECRET || "default-secret-key", {
@@ -21,14 +22,7 @@ const SaveLogic1 = async (body) => {
     member_type,
   } = body || {};
 
-  const existingUser = await Member.findOne({ where: { email } });
-  if (existingUser) {
-    throw new AppError(
-      CODES.AUTH.DUPLICATE_EMAIL.code,
-      CODES.AUTH.DUPLICATE_EMAIL.status,
-      CODES.AUTH.DUPLICATE_EMAIL.message,
-    );
-  }
+  await MemberRepository.AssertEmailAvailable(email);
 
   const user = await Member.create({
     name,
@@ -48,40 +42,20 @@ const SaveLogic1 = async (body) => {
 const SaveLogic2 = async (body) => {
   const { email, password } = body || {};
 
-  const user = await Member.scope("withPassword").findOne({
-    where: { email },
+  const user = await MemberRepository.FindByEmail(email, {
+    withPassword: true,
   });
-  if (!user) {
-    throw new AppError(
-      CODES.AUTH.INVALID_LOGIN.code,
-      CODES.AUTH.INVALID_LOGIN.status,
-      CODES.AUTH.INVALID_LOGIN.message,
-    );
-  }
+  if (!user) ThrowFromCode(CODES.AUTH.INVALID_LOGIN);
 
   const isMatch = await user.comparePassword(password);
-  if (!isMatch) {
-    throw new AppError(
-      CODES.AUTH.INVALID_LOGIN.code,
-      CODES.AUTH.INVALID_LOGIN.status,
-      CODES.AUTH.INVALID_LOGIN.message,
-    );
-  }
+  if (!isMatch) ThrowFromCode(CODES.AUTH.INVALID_LOGIN);
 
   const token = generateToken(user.mem_idx);
   return { user, token };
 };
 
 const SearchLogic1 = async (memIdx) => {
-  const user = await Member.findByPk(memIdx);
-  if (!user) {
-    throw new AppError(
-      CODES.AUTH.MEMBER_NOT_FOUND.code,
-      CODES.AUTH.MEMBER_NOT_FOUND.status,
-      CODES.AUTH.MEMBER_NOT_FOUND.message,
-    );
-  }
-  return user;
+  return MemberRepository.FindById(memIdx, CODES.AUTH.MEMBER_NOT_FOUND);
 };
 
 module.exports = {

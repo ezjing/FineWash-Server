@@ -10,13 +10,34 @@ const {
   WashOptionDetail,
   Member,
 } = require("../models");
-const { AppError } = require("../utils/app_error");
+const { ThrowFromCode } = require("../utils/app_error");
 const CODES = require("../utils/error_codes");
 const {
   GeocodeAddressKakao,
   ToNumberOrNull,
   HaversineDistanceKm,
 } = require("../utils/geo");
+const {
+  FindOwnedBusiness,
+  FindOwnedRoom,
+} = require("../repositories/business_repository");
+
+/** 위경도 직접 입력 또는 주소 지오코딩으로 좌표 결정 */
+const ResolveCoordinates = async (latitude, longitude, address) => {
+  let lat = ToNumberOrNull(latitude);
+  let lng = ToNumberOrNull(longitude);
+  if (lat == null || lng == null) {
+    try {
+      const geo = await GeocodeAddressKakao(address);
+      lat = geo.lat;
+      lng = geo.lng;
+    } catch {
+      lat = null;
+      lng = null;
+    }
+  }
+  return { lat, lng };
+};
 
 const SaveLogic1 = async (memIdx, body = {}) => {
   const {
@@ -41,29 +62,10 @@ const SaveLogic1 = async (memIdx, body = {}) => {
   const addrDetail = String(addressDetail ?? "").trim();
 
   if (!bn || !cn || !ph || !addr) {
-    throw new AppError(
-      CODES.BUSINESS.REQUIRED_FIELDS.code,
-      CODES.BUSINESS.REQUIRED_FIELDS.status,
-      CODES.BUSINESS.REQUIRED_FIELDS.message,
-    );
+    ThrowFromCode(CODES.BUSINESS.REQUIRED_FIELDS);
   }
 
-  // 위경도 입력 정책
-  // 1) latitude/longitude가 들어오면 그대로 저장
-  // 2) 없으면 (주소가 있고, 서버 키가 있으면) 지오코딩 시도 — 실패해도 사업장 등록 자체는 가능
-  let lat = ToNumberOrNull(latitude);
-  let lng = ToNumberOrNull(longitude);
-  if (lat == null || lng == null) {
-    try {
-      const geo = await GeocodeAddressKakao(addr);
-      lat = geo.lat;
-      lng = geo.lng;
-    } catch (e) {
-      // 운영/관리 UX상: 지오코딩 실패가 치명적이면 여기서 throw로 바꾸면 됨
-      lat = null;
-      lng = null;
-    }
-  }
+  const { lat, lng } = await ResolveCoordinates(latitude, longitude, addr);
 
   return BusinessMaster.create({
     mem_idx: memIdx,
@@ -88,16 +90,7 @@ const SaveLogic1 = async (memIdx, body = {}) => {
 };
 
 const SaveLogic2 = async (memIdx, busMstIdx, body = {}) => {
-  const business = await BusinessMaster.findOne({
-    where: { bus_mst_idx: busMstIdx, mem_idx: memIdx },
-  });
-  if (!business) {
-    throw new AppError(
-      CODES.BUSINESS.NOT_FOUND_BUSINESS.code,
-      CODES.BUSINESS.NOT_FOUND_BUSINESS.status,
-      CODES.BUSINESS.NOT_FOUND_BUSINESS.message,
-    );
-  }
+  const business = await FindOwnedBusiness(memIdx, busMstIdx);
 
   const {
     businessNumber,
@@ -136,35 +129,18 @@ const SaveLogic2 = async (memIdx, busMstIdx, body = {}) => {
   payload.update_id = String(memIdx);
 
   if ("business_number" in payload && !payload.business_number) {
-    throw new AppError(
-      CODES.BUSINESS.EMPTY_BUSINESS_NUMBER.code,
-      CODES.BUSINESS.EMPTY_BUSINESS_NUMBER.status,
-      CODES.BUSINESS.EMPTY_BUSINESS_NUMBER.message,
-    );
+    ThrowFromCode(CODES.BUSINESS.EMPTY_BUSINESS_NUMBER);
   }
   if ("company_name" in payload && !payload.company_name) {
-    throw new AppError(
-      CODES.BUSINESS.EMPTY_COMPANY_NAME.code,
-      CODES.BUSINESS.EMPTY_COMPANY_NAME.status,
-      CODES.BUSINESS.EMPTY_COMPANY_NAME.message,
-    );
+    ThrowFromCode(CODES.BUSINESS.EMPTY_COMPANY_NAME);
   }
   if ("phone" in payload && !payload.phone) {
-    throw new AppError(
-      CODES.BUSINESS.EMPTY_PHONE.code,
-      CODES.BUSINESS.EMPTY_PHONE.status,
-      CODES.BUSINESS.EMPTY_PHONE.message,
-    );
+    ThrowFromCode(CODES.BUSINESS.EMPTY_PHONE);
   }
   if ("address" in payload && !payload.address) {
-    throw new AppError(
-      CODES.BUSINESS.EMPTY_ADDRESS.code,
-      CODES.BUSINESS.EMPTY_ADDRESS.status,
-      CODES.BUSINESS.EMPTY_ADDRESS.message,
-    );
+    ThrowFromCode(CODES.BUSINESS.EMPTY_ADDRESS);
   }
 
-  // 주소가 변경됐고 위경도는 별도로 안 줬으면: 서버 지오코딩으로 자동 갱신 시도
   const addressChanged = "address" in payload;
   const latProvided = "latitude" in payload;
   const lngProvided = "longitude" in payload;
@@ -173,8 +149,7 @@ const SaveLogic2 = async (memIdx, busMstIdx, body = {}) => {
       const geo = await GeocodeAddressKakao(payload.address);
       payload.latitude = geo.lat;
       payload.longitude = geo.lng;
-    } catch (e) {
-      // 기존 좌표 유지(혹은 null) 정책: 여기서는 강제 실패시키지 않음
+    } catch {
       if (!latProvided) delete payload.latitude;
       if (!lngProvided) delete payload.longitude;
     }
@@ -185,25 +160,7 @@ const SaveLogic2 = async (memIdx, busMstIdx, body = {}) => {
 };
 
 const SearchLogic1 = async (memIdx, busDtlIdx) => {
-  const room = await BusinessDetail.findOne({
-    where: { bus_dtl_idx: busDtlIdx },
-    include: [
-      {
-        model: BusinessMaster,
-        as: "businessMaster",
-        where: { mem_idx: memIdx },
-        required: true,
-      },
-    ],
-  });
-
-  if (!room) {
-    throw new AppError(
-      CODES.BUSINESS.NOT_FOUND_ROOM.code,
-      CODES.BUSINESS.NOT_FOUND_ROOM.status,
-      CODES.BUSINESS.NOT_FOUND_ROOM.message,
-    );
-  }
+  const room = await FindOwnedRoom(memIdx, busDtlIdx);
 
   const reservations = await Reservation.findAll({
     where: { bus_mst_idx: room.bus_mst_idx },
@@ -221,23 +178,10 @@ const SaveLogic3 = async (memIdx, body = {}) => {
   const { busMstIdx, roomName, startDate, endDate, activeYn } = body;
 
   if (!busMstIdx || !roomName || String(roomName).trim() === "") {
-    throw new AppError(
-      CODES.BUSINESS.ROOM_REQUIRED_FIELDS.code,
-      CODES.BUSINESS.ROOM_REQUIRED_FIELDS.status,
-      CODES.BUSINESS.ROOM_REQUIRED_FIELDS.message,
-    );
+    ThrowFromCode(CODES.BUSINESS.ROOM_REQUIRED_FIELDS);
   }
 
-  const business = await BusinessMaster.findOne({
-    where: { bus_mst_idx: busMstIdx, mem_idx: memIdx },
-  });
-  if (!business) {
-    throw new AppError(
-      CODES.BUSINESS.NOT_FOUND_BUSINESS.code,
-      CODES.BUSINESS.NOT_FOUND_BUSINESS.status,
-      CODES.BUSINESS.NOT_FOUND_BUSINESS.message,
-    );
-  }
+  await FindOwnedBusiness(memIdx, busMstIdx);
 
   return BusinessDetail.create({
     bus_mst_idx: busMstIdx,
@@ -249,25 +193,7 @@ const SaveLogic3 = async (memIdx, body = {}) => {
 };
 
 const SaveLogic4 = async (memIdx, busDtlIdx, body = {}) => {
-  const room = await BusinessDetail.findOne({
-    where: { bus_dtl_idx: busDtlIdx },
-    include: [
-      {
-        model: BusinessMaster,
-        as: "businessMaster",
-        where: { mem_idx: memIdx },
-        required: true,
-      },
-    ],
-  });
-
-  if (!room) {
-    throw new AppError(
-      CODES.BUSINESS.NOT_FOUND_ROOM.code,
-      CODES.BUSINESS.NOT_FOUND_ROOM.status,
-      CODES.BUSINESS.NOT_FOUND_ROOM.message,
-    );
-  }
+  const room = await FindOwnedRoom(memIdx, busDtlIdx);
 
   const { roomName, startDate, endDate, activeYn } = body;
   const payload = {};
@@ -277,11 +203,7 @@ const SaveLogic4 = async (memIdx, busDtlIdx, body = {}) => {
   if (endDate != null) payload.end_date = endDate || null;
 
   if ("room_name" in payload && !payload.room_name) {
-    throw new AppError(
-      CODES.BUSINESS.EMPTY_ROOM_NAME.code,
-      CODES.BUSINESS.EMPTY_ROOM_NAME.status,
-      CODES.BUSINESS.EMPTY_ROOM_NAME.message,
-    );
+    ThrowFromCode(CODES.BUSINESS.EMPTY_ROOM_NAME);
   }
 
   if ("start_date" in payload && "end_date" in payload) {
@@ -289,11 +211,7 @@ const SaveLogic4 = async (memIdx, busDtlIdx, body = {}) => {
       const s = new Date(payload.start_date);
       const e = new Date(payload.end_date);
       if (!Number.isNaN(s.getTime()) && !Number.isNaN(e.getTime()) && e < s) {
-        throw new AppError(
-          CODES.BUSINESS.INVALID_PERIOD.code,
-          CODES.BUSINESS.INVALID_PERIOD.status,
-          CODES.BUSINESS.INVALID_PERIOD.message,
-        );
+        ThrowFromCode(CODES.BUSINESS.INVALID_PERIOD);
       }
     }
   }
@@ -303,25 +221,7 @@ const SaveLogic4 = async (memIdx, busDtlIdx, body = {}) => {
 };
 
 const SaveLogic5 = async (memIdx, busDtlIdx) => {
-  const room = await BusinessDetail.findOne({
-    where: { bus_dtl_idx: busDtlIdx },
-    include: [
-      {
-        model: BusinessMaster,
-        as: "businessMaster",
-        where: { mem_idx: memIdx },
-        required: true,
-      },
-    ],
-  });
-
-  if (!room) {
-    throw new AppError(
-      CODES.BUSINESS.NOT_FOUND_ROOM.code,
-      CODES.BUSINESS.NOT_FOUND_ROOM.status,
-      CODES.BUSINESS.NOT_FOUND_ROOM.message,
-    );
-  }
+  const room = await FindOwnedRoom(memIdx, busDtlIdx);
 
   const reservationCount = await Reservation.count({
     where: { bus_mst_idx: room.bus_mst_idx },
@@ -354,29 +254,16 @@ const SearchLogic3 = async (memIdx, busMstIdx) => {
     ],
   });
 
-  if (!business) {
-    throw new AppError(
-      CODES.BUSINESS.NOT_FOUND_BUSINESS.code,
-      CODES.BUSINESS.NOT_FOUND_BUSINESS.status,
-      CODES.BUSINESS.NOT_FOUND_BUSINESS.message,
-    );
-  }
+  if (!business) ThrowFromCode(CODES.BUSINESS.NOT_FOUND_BUSINESS);
   return business;
 };
 
-/**
- * 좌표 기반 가까운 제휴 세차장 조회 (공개 API 용)
- * - 클라이언트가 전달한 lat/lng를 그대로 사용
- * - (latitude/longitude 있는 것)만 대상으로 거리 계산
- * - business_type과 무관하게 모두 조회
- */
 const SearchLogic4 = async (latitude, longitude, limit = 20) => {
   const userLat = ToNumberOrNull(latitude);
   const userLng = ToNumberOrNull(longitude);
   if (userLat == null || userLng == null) {
-    throw new AppError(
-      CODES.BUSINESS.REQUIRED_FIELDS.code,
-      CODES.BUSINESS.REQUIRED_FIELDS.status,
+    ThrowFromCode(
+      CODES.BUSINESS.REQUIRED_FIELDS,
       "lat/lng(또는 latitude/longitude)가 필요합니다.",
     );
   }
@@ -400,15 +287,14 @@ const SearchLogic4 = async (latitude, longitude, limit = 20) => {
     ],
   });
 
-  const mapped = (rows || [])
+  return (rows || [])
     .map((b) => {
       const lat = ToNumberOrNull(b.latitude);
       const lng = ToNumberOrNull(b.longitude);
       if (lat == null || lng == null) return null;
 
       const distanceKmRaw = HaversineDistanceKm(userLat, userLng, lat, lng);
-      const distanceKm = Math.round(distanceKmRaw * 10) / 10; // 1 decimal for client display
-
+      const distanceKm = Math.round(distanceKmRaw * 10) / 10;
       const details = Array.isArray(b.businessDetails) ? b.businessDetails : [];
 
       return {
@@ -428,11 +314,8 @@ const SearchLogic4 = async (latitude, longitude, limit = 20) => {
     .filter(Boolean)
     .sort((a, b) => a.distanceKm - b.distanceKm)
     .slice(0, safeLimit);
-
-  return mapped;
 };
 
-/** 사업장(MST) 삭제 — 하위 룸·옵션·스케줄 정리, 예약이 있으면 불가 */
 const SaveLogic6 = async (memIdx, busMstIdx) => {
   const business = await BusinessMaster.findOne({
     where: { bus_mst_idx: busMstIdx, mem_idx: memIdx },
@@ -441,13 +324,7 @@ const SaveLogic6 = async (memIdx, busMstIdx) => {
     ],
   });
 
-  if (!business) {
-    throw new AppError(
-      CODES.BUSINESS.NOT_FOUND_BUSINESS.code,
-      CODES.BUSINESS.NOT_FOUND_BUSINESS.status,
-      CODES.BUSINESS.NOT_FOUND_BUSINESS.message,
-    );
-  }
+  if (!business) ThrowFromCode(CODES.BUSINESS.NOT_FOUND_BUSINESS);
 
   const roomIds = (business.businessDetails || []).map((r) => r.bus_dtl_idx);
   if (roomIds.length > 0) {
@@ -455,11 +332,7 @@ const SaveLogic6 = async (memIdx, busMstIdx) => {
       where: { bus_mst_idx: busMstIdx },
     });
     if (resvCount > 0) {
-      throw new AppError(
-        CODES.BUSINESS.DELETE_HAS_RESERVATIONS.code,
-        CODES.BUSINESS.DELETE_HAS_RESERVATIONS.status,
-        CODES.BUSINESS.DELETE_HAS_RESERVATIONS.message,
-      );
+      ThrowFromCode(CODES.BUSINESS.DELETE_HAS_RESERVATIONS);
     }
   }
 

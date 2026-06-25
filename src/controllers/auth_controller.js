@@ -1,6 +1,10 @@
 const AuthService = require("../services/auth_service");
 const { Ok } = require("../utils/response");
 const AsyncHandler = require("../middlewares/asyncHandler");
+const {
+  ToSignupUserDto,
+  ToUserProfileDto,
+} = require("../mappers/member_mapper");
 
 const SaveLogic1 = AsyncHandler(async (req, res) => {
   const { user, token } = await AuthService.SaveLogic1(req.body);
@@ -9,14 +13,7 @@ const SaveLogic1 = AsyncHandler(async (req, res) => {
     {
       message: "회원가입이 완료되었습니다.",
       token,
-      user: {
-        id: user.mem_idx,
-        userId: user.user_id,
-        name: user.name,
-        email: user.email,
-        phone: user.phone,
-        memberType: user.member_type,
-      },
+      user: ToSignupUserDto(user),
     },
     201,
   );
@@ -27,43 +24,13 @@ const SaveLogic2 = AsyncHandler(async (req, res) => {
   return Ok(res, {
     message: "로그인 성공",
     token,
-    user: {
-      memIdx: user.mem_idx,
-      busMstIdx: user.bus_mst_idx,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      address: user.address,
-      addressDetail: user.address_detail,
-      gender: user.gender,
-      socialType: user.social_type,
-      socialId: user.social_id,
-      memberType: user.member_type,
-      createdDate: user.create_date,
-      updatedDate: user.update_date,
-    },
+    user: ToUserProfileDto(user),
   });
 });
 
 const SearchLogic1 = AsyncHandler(async (req, res) => {
   const user = await AuthService.SearchLogic1(req.user.memIdx);
-  return Ok(res, {
-    user: {
-      memIdx: user.mem_idx,
-      busMstIdx: user.bus_mst_idx,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      address: user.address,
-      addressDetail: user.address_detail,
-      gender: user.gender,
-      socialType: user.social_type,
-      socialId: user.social_id,
-      memberType: user.member_type,
-      createdDate: user.create_date,
-      updatedDate: user.update_date,
-    },
-  });
+  return Ok(res, { user: ToUserProfileDto(user) });
 });
 
 module.exports = {

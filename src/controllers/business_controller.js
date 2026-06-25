@@ -1,65 +1,11 @@
 const BusinessService = require("../services/business_service");
 const { Ok } = require("../utils/response");
 const AsyncHandler = require("../middlewares/asyncHandler");
-
-const MapRoom = (room) => ({
-  busDtlIdx: room.bus_dtl_idx,
-  busMstIdx: room.bus_mst_idx,
-  roomName: room.room_name,
-  activeYn: room.active_yn,
-  startDate: room.start_date,
-  endDate: room.end_date,
-});
-
-const MapReservation = (r) => ({
-  resvIdx: r.resv_idx,
-  busMstIdx: r.bus_mst_idx,
-  memIdx: r.mem_idx,
-  vehIdx: r.veh_idx,
-  mainOption: r.main_option,
-  midOption: r.mid_option,
-  subOption: r.sub_option,
-  vehicleLocation: r.vehicle_location,
-  contractYn: r.contract_yn,
-  date: r.date,
-  time: r.time,
-  paymentAmount: r.payment_amount,
-  createdDate: r.create_date,
-  updateDate: r.update_date,
-});
-
-const MapBusinessDetail = (bd) => ({
-  id: bd.bus_dtl_idx,
-  busDtlIdx: bd.bus_dtl_idx,
-  busMstIdx: bd.bus_mst_idx,
-  roomName: bd.room_name,
-  activeYn: bd.active_yn,
-  startDate: bd.start_date,
-  endDate: bd.end_date,
-});
-
-const MapBusiness = (b) => ({
-  id: b.bus_mst_idx,
-  busMstIdx: b.bus_mst_idx,
-  memIdx: b.mem_idx,
-  businessNumber: b.business_number,
-  companyName: b.company_name,
-  phone: b.phone,
-  email: b.email,
-  address: b.address,
-  addressDetail: b.address_detail,
-  latitude: b.latitude,
-  longitude: b.longitude,
-  businessType: b.business_type,
-  depositYn: b.deposit_yn,
-  depositAmount: b.deposit_amount,
-  remark: b.remark,
-  businessDetails: Array.isArray(b.businessDetails)
-    ? b.businessDetails.map(MapBusinessDetail)
-    : [],
-  createdAt: b.create_date,
-  updatedAt: b.update_date,
-});
+const {
+  MapRoom,
+  MapBusinessReservation,
+  MapBusiness,
+} = require("../mappers/business_mapper");
 
 const SaveLogic1 = AsyncHandler(async (req, res) => {
   const created = await BusinessService.SaveLogic1(
@@ -91,7 +37,7 @@ const SearchLogic1 = AsyncHandler(async (req, res) => {
   return Ok(res, {
     room: MapRoom(room),
     reservations: Array.isArray(reservations)
-      ? reservations.map(MapReservation)
+      ? reservations.map(MapBusinessReservation)
       : [],
     totalRevenue,
   });
@@ -135,13 +81,7 @@ const SearchLogic2 = AsyncHandler(async (req, res) => {
   const businesses = await BusinessService.SearchLogic2(req.user.memIdx);
   return Ok(res, {
     businesses: Array.isArray(businesses)
-      ? businesses.map((b) => {
-          const mapped = MapBusiness(b);
-          // 목록에서는 updatedAt이 필요 없으면 제거(가독성)
-          // eslint-disable-next-line no-unused-vars
-          const { updatedAt, ...rest } = mapped;
-          return rest;
-        })
+      ? businesses.map((b) => MapBusiness(b, { includeUpdatedAt: false }))
       : [],
   });
 });
@@ -159,14 +99,11 @@ const SaveLogic6 = AsyncHandler(async (req, res) => {
   return Ok(res, { deleted: true });
 });
 
-// 좌표 기반 가까운 제휴 세차장 거리순 조회 (공개)
 const SearchLogic4 = AsyncHandler(async (req, res) => {
   const { lat, lng, latitude, longitude, limit } = req.query || {};
-  const userLat = lat ?? latitude;
-  const userLng = lng ?? longitude;
   const businesses = await BusinessService.SearchLogic4(
-    userLat,
-    userLng,
+    lat ?? latitude,
+    lng ?? longitude,
     limit,
   );
   return Ok(res, { businesses });

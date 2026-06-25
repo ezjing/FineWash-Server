@@ -1,28 +1,14 @@
 const { Op } = require("sequelize");
-const {
-  ScheduleMaster,
-  ScheduleDetail,
-  BusinessMaster,
-} = require("../models");
-const { AppError } = require("../utils/app_error");
+const { ScheduleMaster, ScheduleDetail } = require("../models");
+const { ThrowFromCode } = require("../utils/app_error");
 const CODES = require("../utils/error_codes");
+const { AssertBusinessOwner } = require("../repositories/business_repository");
+const ScheduleRepository = require("../repositories/schedule_repository");
+const { FormatTimeForApi, NormalizeTime } = require("../utils/time");
 
 const yn = (value, fallback = "N") => {
   const v = value ?? fallback;
   return v === "Y" || v === true || v === "true" || v === 1 ? "Y" : "N";
-};
-
-const normalizeTime = (value) => {
-  if (value == null || String(value).trim() === "") return null;
-  const raw = String(value).trim();
-  if (/^\d{2}:\d{2}$/.test(raw)) return `${raw}:00`;
-  return raw;
-};
-
-const formatTimeForApi = (value) => {
-  if (value == null) return null;
-  const raw = String(value);
-  return raw.length >= 5 ? raw.substring(0, 5) : raw;
 };
 
 const normalizeMstInput = (body = {}) => ({
@@ -33,79 +19,16 @@ const normalizeMstInput = (body = {}) => ({
   friday_yn: yn(body.friday_yn ?? body.fridayYn),
   saturday_yn: yn(body.saturday_yn ?? body.saturdayYn),
   sunday_yn: yn(body.sunday_yn ?? body.sundayYn),
-  start_time: normalizeTime(body.start_time ?? body.startTime),
-  end_time: normalizeTime(body.end_time ?? body.endTime),
+  start_time: NormalizeTime(body.start_time ?? body.startTime),
+  end_time: NormalizeTime(body.end_time ?? body.endTime),
 });
 
 const normalizeDtlInput = (body = {}) => ({
   schedule_date: body.schedule_date ?? body.scheduleDate ?? null,
   holiday_yn: yn(body.holiday_yn ?? body.holidayYn),
-  start_time: normalizeTime(body.start_time ?? body.startTime),
-  end_time: normalizeTime(body.end_time ?? body.endTime),
+  start_time: NormalizeTime(body.start_time ?? body.startTime),
+  end_time: NormalizeTime(body.end_time ?? body.endTime),
 });
-
-const assertBusinessOwner = async (memIdx, busMstIdx) => {
-  const business = await BusinessMaster.findOne({
-    where: { bus_mst_idx: busMstIdx, mem_idx: memIdx },
-  });
-  if (!business) {
-    throw new AppError(
-      CODES.WASH_OPTION.FORBIDDEN_BUSINESS.code,
-      CODES.WASH_OPTION.FORBIDDEN_BUSINESS.status,
-      CODES.WASH_OPTION.FORBIDDEN_BUSINESS.message,
-    );
-  }
-  return business;
-};
-
-const assertMasterOwner = async (memIdx, schMstIdx) => {
-  const master = await ScheduleMaster.findByPk(schMstIdx, {
-    include: [
-      {
-        model: BusinessMaster,
-        as: "businessMaster",
-        where: { mem_idx: memIdx },
-        required: true,
-      },
-    ],
-  });
-  if (!master) {
-    throw new AppError(
-      CODES.COMMON.NOT_FOUND.code,
-      CODES.COMMON.NOT_FOUND.status,
-      CODES.COMMON.NOT_FOUND.message,
-    );
-  }
-  return master;
-};
-
-const assertDetailOwner = async (memIdx, schDtlIdx) => {
-  const detail = await ScheduleDetail.findByPk(schDtlIdx, {
-    include: [
-      {
-        model: ScheduleMaster,
-        as: "scheduleMaster",
-        required: true,
-        include: [
-          {
-            model: BusinessMaster,
-            as: "businessMaster",
-            where: { mem_idx: memIdx },
-            required: true,
-          },
-        ],
-      },
-    ],
-  });
-  if (!detail) {
-    throw new AppError(
-      CODES.COMMON.NOT_FOUND.code,
-      CODES.COMMON.NOT_FOUND.status,
-      CODES.COMMON.NOT_FOUND.message,
-    );
-  }
-  return detail;
-};
 
 const getMonthRange = (year, month) => {
   const y = Number(year);
@@ -120,14 +43,10 @@ const getMonthRange = (year, month) => {
 const SearchLogic1 = async (memIdx, query = {}) => {
   const busMstIdx = query.busMstIdx ?? query.bus_mst_idx;
   if (busMstIdx == null || String(busMstIdx).trim() === "") {
-    throw new AppError(
-      CODES.WASH_OPTION.MISSING_BUS_MST_IDX.code,
-      CODES.WASH_OPTION.MISSING_BUS_MST_IDX.status,
-      CODES.WASH_OPTION.MISSING_BUS_MST_IDX.message,
-    );
+    ThrowFromCode(CODES.WASH_OPTION.MISSING_BUS_MST_IDX);
   }
 
-  await assertBusinessOwner(memIdx, Number(busMstIdx));
+  await AssertBusinessOwner(memIdx, Number(busMstIdx));
 
   const rows = await ScheduleMaster.findAll({
     where: { bus_mst_idx: Number(busMstIdx) },
@@ -141,14 +60,10 @@ const SearchLogic1 = async (memIdx, query = {}) => {
 const SaveLogic1 = async (memIdx, body = {}) => {
   const busMstIdx = body.bus_mst_idx ?? body.busMstIdx;
   if (busMstIdx == null) {
-    throw new AppError(
-      CODES.WASH_OPTION.MISSING_BUS_MST_IDX.code,
-      CODES.WASH_OPTION.MISSING_BUS_MST_IDX.status,
-      CODES.WASH_OPTION.MISSING_BUS_MST_IDX.message,
-    );
+    ThrowFromCode(CODES.WASH_OPTION.MISSING_BUS_MST_IDX);
   }
 
-  await assertBusinessOwner(memIdx, Number(busMstIdx));
+  await AssertBusinessOwner(memIdx, Number(busMstIdx));
 
   const fields = normalizeMstInput(body);
   return await ScheduleMaster.create({
@@ -161,7 +76,7 @@ const SaveLogic1 = async (memIdx, body = {}) => {
 
 /** SaveLogic2: 스케줄 MST 수정 */
 const SaveLogic2 = async (memIdx, schMstIdx, body = {}) => {
-  const existing = await assertMasterOwner(memIdx, schMstIdx);
+  const existing = await ScheduleRepository.FindOwnedMaster(memIdx, schMstIdx);
   const fields = normalizeMstInput(body);
   return await existing.update({
     ...fields,
@@ -171,7 +86,7 @@ const SaveLogic2 = async (memIdx, schMstIdx, body = {}) => {
 
 /** DeleteLogic1: 스케줄 MST 삭제 */
 const DeleteLogic1 = async (memIdx, schMstIdx) => {
-  const existing = await assertMasterOwner(memIdx, schMstIdx);
+  const existing = await ScheduleRepository.FindOwnedMaster(memIdx, schMstIdx);
   await ScheduleDetail.destroy({ where: { sch_mst_idx: schMstIdx } });
   await existing.destroy();
   return { deleted: true };
@@ -185,13 +100,12 @@ const SearchLogic2 = async (memIdx, query = {}) => {
   if (schMstIdx == null) {
     const busMstIdx = query.busMstIdx ?? query.bus_mst_idx;
     if (busMstIdx == null) {
-      throw new AppError(
-        CODES.COMMON.BAD_REQUEST.code,
-        CODES.COMMON.BAD_REQUEST.status,
+      ThrowFromCode(
+        CODES.COMMON.BAD_REQUEST,
         "schMstIdx 또는 busMstIdx는 필수입니다.",
       );
     }
-    await assertBusinessOwner(memIdx, Number(busMstIdx));
+    await AssertBusinessOwner(memIdx, Number(busMstIdx));
     const master = await ScheduleMaster.findOne({
       where: { bus_mst_idx: Number(busMstIdx) },
       order: [["sch_mst_idx", "DESC"]],
@@ -201,15 +115,11 @@ const SearchLogic2 = async (memIdx, query = {}) => {
     }
     schMstIdx = master.sch_mst_idx;
   } else {
-    await assertMasterOwner(memIdx, Number(schMstIdx));
+    await ScheduleRepository.FindOwnedMaster(memIdx, Number(schMstIdx));
   }
 
   if (year == null || month == null) {
-    throw new AppError(
-      CODES.COMMON.BAD_REQUEST.code,
-      CODES.COMMON.BAD_REQUEST.status,
-      "year, month는 필수입니다.",
-    );
+    ThrowFromCode(CODES.COMMON.BAD_REQUEST, "year, month는 필수입니다.");
   }
 
   const { startDate, endDate } = getMonthRange(year, month);
@@ -228,31 +138,22 @@ const SearchLogic2 = async (memIdx, query = {}) => {
 const SaveLogic3 = async (memIdx, body = {}) => {
   const schMstIdx = body.sch_mst_idx ?? body.schMstIdx;
   if (schMstIdx == null) {
-    throw new AppError(
-      CODES.COMMON.BAD_REQUEST.code,
-      CODES.COMMON.BAD_REQUEST.status,
-      "schMstIdx는 필수입니다.",
-    );
+    ThrowFromCode(CODES.COMMON.BAD_REQUEST, "schMstIdx는 필수입니다.");
   }
 
-  await assertMasterOwner(memIdx, Number(schMstIdx));
+  await ScheduleRepository.FindOwnedMaster(memIdx, Number(schMstIdx));
 
   const fields = normalizeDtlInput(body);
   if (!fields.schedule_date) {
-    throw new AppError(
-      CODES.COMMON.BAD_REQUEST.code,
-      CODES.COMMON.BAD_REQUEST.status,
-      "scheduleDate는 필수입니다.",
-    );
+    ThrowFromCode(CODES.COMMON.BAD_REQUEST, "scheduleDate는 필수입니다.");
   }
 
   if (fields.holiday_yn === "Y") {
     fields.start_time = null;
     fields.end_time = null;
   } else if (!fields.start_time || !fields.end_time) {
-    throw new AppError(
-      CODES.COMMON.BAD_REQUEST.code,
-      CODES.COMMON.BAD_REQUEST.status,
+    ThrowFromCode(
+      CODES.COMMON.BAD_REQUEST,
       "연장근무는 시작/종료 시간이 필요합니다.",
     );
   }
@@ -281,7 +182,7 @@ const SaveLogic3 = async (memIdx, body = {}) => {
 
 /** SaveLogic4: 스케줄 DTL 수정 */
 const SaveLogic4 = async (memIdx, schDtlIdx, body = {}) => {
-  const existing = await assertDetailOwner(memIdx, schDtlIdx);
+  const existing = await ScheduleRepository.FindOwnedDetail(memIdx, schDtlIdx);
   const fields = normalizeDtlInput(body);
 
   if (fields.schedule_date == null) {
@@ -295,9 +196,8 @@ const SaveLogic4 = async (memIdx, schDtlIdx, body = {}) => {
     (fields.start_time == null && existing.start_time == null) ||
     (fields.end_time == null && existing.end_time == null)
   ) {
-    throw new AppError(
-      CODES.COMMON.BAD_REQUEST.code,
-      CODES.COMMON.BAD_REQUEST.status,
+    ThrowFromCode(
+      CODES.COMMON.BAD_REQUEST,
       "연장근무는 시작/종료 시간이 필요합니다.",
     );
   }
@@ -310,7 +210,7 @@ const SaveLogic4 = async (memIdx, schDtlIdx, body = {}) => {
 
 /** DeleteLogic2: 스케줄 DTL 삭제 */
 const DeleteLogic2 = async (memIdx, schDtlIdx) => {
-  const existing = await assertDetailOwner(memIdx, schDtlIdx);
+  const existing = await ScheduleRepository.FindOwnedDetail(memIdx, schDtlIdx);
   await existing.destroy();
   return { deleted: true };
 };
@@ -324,5 +224,5 @@ module.exports = {
   SaveLogic3,
   SaveLogic4,
   DeleteLogic2,
-  formatTimeForApi,
+  formatTimeForApi: FormatTimeForApi,
 };

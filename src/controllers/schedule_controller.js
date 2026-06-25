@@ -1,43 +1,13 @@
 const ScheduleService = require("../services/schedule_service");
 const { Ok } = require("../utils/response");
 const AsyncHandler = require("../middlewares/asyncHandler");
-
-const mapMstRow = (m) => ({
-  schMstIdx: m.sch_mst_idx,
-  busMstIdx: m.bus_mst_idx,
-  mondayYn: m.monday_yn,
-  tuesdayYn: m.tuesday_yn,
-  wednesdayYn: m.wednesday_yn,
-  thursdayYn: m.thursday_yn,
-  fridayYn: m.friday_yn,
-  saturdayYn: m.saturday_yn,
-  sundayYn: m.sunday_yn,
-  startTime: ScheduleService.formatTimeForApi(m.start_time),
-  endTime: ScheduleService.formatTimeForApi(m.end_time),
-  createId: m.create_id,
-  createDate: m.create_date,
-  updateId: m.update_id,
-  updateDate: m.update_date,
-});
-
-const mapDtlRow = (d) => ({
-  schDtlIdx: d.sch_dtl_idx,
-  schMstIdx: d.sch_mst_idx,
-  scheduleDate: d.schedule_date,
-  holidayYn: d.holiday_yn,
-  startTime: ScheduleService.formatTimeForApi(d.start_time),
-  endTime: ScheduleService.formatTimeForApi(d.end_time),
-  createId: d.create_id,
-  createDate: d.create_date,
-  updateId: d.update_id,
-  updateDate: d.update_date,
-});
+const { MapMstRow, MapDtlRow } = require("../mappers/schedule_mapper");
 
 const SearchLogic1 = AsyncHandler(async (req, res) => {
   const result = await ScheduleService.SearchLogic1(req.user.memIdx, req.query);
   return Ok(res, {
     count: result.count,
-    rows: (result.rows || []).map(mapMstRow),
+    rows: (result.rows || []).map(MapMstRow),
   });
 });
 
@@ -46,7 +16,7 @@ const SaveLogic1 = AsyncHandler(async (req, res) => {
     req.user.memIdx,
     req.body || {},
   );
-  return Ok(res, { row: mapMstRow(saved) }, 201);
+  return Ok(res, { row: MapMstRow(saved) }, 201);
 });
 
 const SaveLogic2 = AsyncHandler(async (req, res) => {
@@ -55,7 +25,7 @@ const SaveLogic2 = AsyncHandler(async (req, res) => {
     req.params.schMstIdx,
     req.body || {},
   );
-  return Ok(res, { row: mapMstRow(saved) });
+  return Ok(res, { row: MapMstRow(saved) });
 });
 
 const DeleteLogic1 = AsyncHandler(async (req, res) => {
@@ -68,7 +38,7 @@ const SearchLogic2 = AsyncHandler(async (req, res) => {
   return Ok(res, {
     count: result.count,
     schMstIdx: result.schMstIdx,
-    rows: (result.rows || []).map(mapDtlRow),
+    rows: (result.rows || []).map(MapDtlRow),
   });
 });
 
@@ -77,7 +47,7 @@ const SaveLogic3 = AsyncHandler(async (req, res) => {
     req.user.memIdx,
     req.body || {},
   );
-  return Ok(res, { row: mapDtlRow(saved) }, 201);
+  return Ok(res, { row: MapDtlRow(saved) }, 201);
 });
 
 const SaveLogic4 = AsyncHandler(async (req, res) => {
@@ -86,7 +56,7 @@ const SaveLogic4 = AsyncHandler(async (req, res) => {
     req.params.schDtlIdx,
     req.body || {},
   );
-  return Ok(res, { row: mapDtlRow(saved) });
+  return Ok(res, { row: MapDtlRow(saved) });
 });
 
 const DeleteLogic2 = AsyncHandler(async (req, res) => {

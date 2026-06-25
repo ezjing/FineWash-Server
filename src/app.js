@@ -36,10 +36,10 @@ app.get("/api/health", (req, res) => {
   res.json({ status: "ok", message: "FineWash API Server is running" });
 });
 
-// Error handling middleware
-app.use(errorHandler);
-
-// 404 handler
+// 404 handler (에러 핸들러보다 먼저 등록)
 app.use(notFound);
+
+// 중앙 집중식 에러 핸들링
+app.use(errorHandler);
 
 module.exports = app;

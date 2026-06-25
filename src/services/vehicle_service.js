@@ -1,6 +1,5 @@
 const { Vehicle } = require("../models");
-const { AppError } = require("../utils/app_error");
-const CODES = require("../utils/error_codes");
+const VehicleRepository = require("../repositories/vehicle_repository");
 
 const SearchLogic1 = async (memIdx) => {
   return Vehicle.findAll({
@@ -13,19 +12,7 @@ const SaveLogic1 = async (memIdx, body) => {
   const { vehicle_type, model, vehicle_number, color, year, remark } =
     body || {};
 
-  const existingVehicle = await Vehicle.findOne({
-    where: {
-      mem_idx: memIdx,
-      vehicle_number: vehicle_number,
-    },
-  });
-  if (existingVehicle) {
-    throw new AppError(
-      CODES.VEHICLE.DUPLICATE_VEHICLE_NUMBER.code,
-      CODES.VEHICLE.DUPLICATE_VEHICLE_NUMBER.status,
-      CODES.VEHICLE.DUPLICATE_VEHICLE_NUMBER.message,
-    );
-  }
+  await VehicleRepository.AssertUniqueNumber(memIdx, vehicle_number);
 
   return Vehicle.create({
     mem_idx: memIdx,
@@ -45,36 +32,23 @@ const SaveLogic2 = async (memIdx, vehIdx, body) => {
 
   if (vehicle_type !== undefined) updateData.vehicle_type = vehicle_type;
   if (model !== undefined) updateData.model = model;
-  if (vehicle_number !== undefined) updateData.vehicle_number = vehicle_number;
+  if (vehicle_number !== undefined) {
+    await VehicleRepository.AssertUniqueNumber(
+      memIdx,
+      vehicle_number,
+      vehIdx,
+    );
+    updateData.vehicle_number = vehicle_number;
+  }
   if (color !== undefined) updateData.color = color;
   if (year !== undefined) updateData.year = year;
   if (remark !== undefined) updateData.remark = remark;
 
-  const [updatedCount] = await Vehicle.update(updateData, {
-    where: { veh_idx: vehIdx, mem_idx: memIdx },
-  });
-  if (updatedCount === 0) {
-    throw new AppError(
-      CODES.VEHICLE.NOT_FOUND_VEHICLE.code,
-      CODES.VEHICLE.NOT_FOUND_VEHICLE.status,
-      CODES.VEHICLE.NOT_FOUND_VEHICLE.message,
-    );
-  }
-
-  return Vehicle.findByPk(vehIdx);
+  return VehicleRepository.UpdateOwned(memIdx, vehIdx, updateData);
 };
 
 const SaveLogic3 = async (memIdx, vehIdx) => {
-  const deletedCount = await Vehicle.destroy({
-    where: { veh_idx: vehIdx, mem_idx: memIdx },
-  });
-  if (deletedCount === 0) {
-    throw new AppError(
-      CODES.VEHICLE.NOT_FOUND_VEHICLE.code,
-      CODES.VEHICLE.NOT_FOUND_VEHICLE.status,
-      CODES.VEHICLE.NOT_FOUND_VEHICLE.message,
-    );
-  }
+  await VehicleRepository.DeleteOwned(memIdx, vehIdx);
   return true;
 };
 

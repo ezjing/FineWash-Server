@@ -1,24 +1,7 @@
 const ProductService = require("../services/product_service");
 const { Ok } = require("../utils/response");
 const AsyncHandler = require("../middlewares/asyncHandler");
-
-const MapProduct = (p) => ({
-  id: p.id,
-  name: p.name,
-  price: p.price,
-  image: p.image,
-  category: p.category,
-  description: p.description,
-  stock: p.stock,
-});
-
-const MapProductSummary = (p) => ({
-  id: p.id,
-  name: p.name,
-  price: p.price,
-  image: p.image,
-  category: p.category,
-});
+const { MapProduct, MapProductSummary } = require("../mappers/product_mapper");
 
 const SearchLogic1 = AsyncHandler(async (req, res) => {
   const result = await ProductService.SearchLogic1();
@@ -38,7 +21,9 @@ const SearchLogic2 = AsyncHandler(async (req, res) => {
 
 const SearchLogic3 = AsyncHandler(async (req, res) => {
   const products = await ProductService.SearchLogic3(req.params.category);
-  return Ok(res, { products: Array.isArray(products) ? products.map(MapProductSummary) : [] });
+  return Ok(res, {
+    products: Array.isArray(products) ? products.map(MapProductSummary) : [],
+  });
 });
 
 module.exports = {

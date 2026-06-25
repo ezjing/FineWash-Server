@@ -153,6 +153,40 @@ module.exports = {
       message: "상품을 찾을 수 없습니다.",
     },
   },
+  GEO: {
+    REQUIRED_ADDRESS: {
+      code: "GEO.REQUIRED_ADDRESS",
+      status: 400,
+      message: "address는 필수입니다.",
+    },
+    MISSING_API_KEY: {
+      code: "GEO.MISSING_API_KEY",
+      status: 500,
+      message: "서버 지오코딩 키(KAKAO_REST_API_KEY)가 설정되지 않았습니다.",
+    },
+    FETCH_UNAVAILABLE: {
+      code: "GEO.FETCH_UNAVAILABLE",
+      status: 500,
+      message: "현재 런타임에서 fetch를 사용할 수 없습니다(Node 18+ 권장).",
+    },
+    PROVIDER_ERROR: {
+      code: "GEO.PROVIDER_ERROR",
+      status: 502,
+      message: "지오코딩 요청이 실패했습니다.",
+    },
+    NOT_FOUND: {
+      code: "GEO.NOT_FOUND",
+      status: 400,
+      message: "주소를 좌표로 변환할 수 없습니다(지오코딩 결과 없음).",
+    },
+  },
+  PAYMENT: {
+    VERIFICATION_FAILED: {
+      code: "PAYMENT.VERIFICATION_FAILED",
+      status: 400,
+      message: "결제 검증에 실패했습니다.",
+    },
+  },
   WASH_OPTION: {
     FORBIDDEN_BUSINESS: {
       code: "WASH_OPTION.FORBIDDEN_BUSINESS",

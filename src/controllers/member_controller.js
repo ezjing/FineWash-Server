@@ -1,21 +1,13 @@
 const MemberService = require("../services/member_service");
 const { Ok } = require("../utils/response");
 const AsyncHandler = require("../middlewares/asyncHandler");
+const { ToMemberUpdateDto } = require("../mappers/member_mapper");
 
 const SaveLogic1 = AsyncHandler(async (req, res) => {
   const user = await MemberService.SaveLogic1(req.user.memIdx, req.body);
   return Ok(res, {
     message: "프로필이 업데이트되었습니다.",
-    user: {
-      id: user.mem_idx,
-      userId: user.user_id,
-      name: user.name,
-      email: user.email,
-      phone: user.phone,
-      address: user.address,
-      addressDetail: user.address_detail,
-      gender: user.gender,
-    },
+    user: ToMemberUpdateDto(user),
   });
 });
 

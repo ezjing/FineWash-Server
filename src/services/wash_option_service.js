@@ -2,12 +2,13 @@ const { sequelize } = require("../config/db");
 const {
   WashOptionMaster,
   WashOptionDetail,
-  BusinessMaster,
 } = require("../models");
-const { AppError } = require("../utils/app_error");
+const { ThrowFromCode } = require("../utils/app_error");
 const CODES = require("../utils/error_codes");
+const { AssertBusinessOwner, FindById } = require("../repositories/business_repository");
+const WashOptionRepository = require("../repositories/wash_option_repository");
+const QueryRepository = require("../repositories/query_repository");
 
-/** API camelCase / DB snake_case 공통 입력 정규화 */
 const normalizeMstInput = (body = {}) => ({
   option_name: body.option_name ?? body.optionName ?? null,
   vehicle_type: body.vehicle_type ?? body.vehicleType ?? null,
@@ -38,61 +39,12 @@ const normalizeDtlInput = (body = {}) => ({
       : null,
 });
 
-/**
- * 내부 공통 조회 헬퍼
- * - `findAndCountAll` 기반
- * - where/limit/offset/order/include/transaction 그대로 실행
- */
-const SearchInternal = async (model, params = {}) => {
-  const { where, limit, offset, order, transaction, include } = params;
-  return await model.findAndCountAll({
-    where: where || {},
-    include: include || undefined,
-    limit: Number.isFinite(Number(limit)) ? Number(limit) : undefined,
-    offset: Number.isFinite(Number(offset)) ? Number(offset) : undefined,
-    order: Array.isArray(order) && order.length > 0 ? order : undefined,
-    transaction,
-  });
+const mstDetailsInclude = {
+  model: WashOptionDetail,
+  as: "washOptionDetails",
+  required: false,
 };
 
-/**
- * 내부 공통 저장(업서트) 헬퍼
- * - pk 값이 있으면 update, 없으면 create
- * - payload/존재여부 에러는 공통 코드로 통일
- */
-const SaveInternal = async (model, pkField, payload, options = {}) => {
-  const { transaction } = options;
-  if (!payload || typeof payload !== "object") {
-    throw new AppError(
-      CODES.COMMON.BAD_REQUEST.code,
-      CODES.COMMON.BAD_REQUEST.status,
-      CODES.COMMON.BAD_REQUEST.message,
-    );
-  }
-
-  const pk = payload[pkField];
-  if (pk !== undefined && pk !== null && pk !== "") {
-    const row = await model.findByPk(pk, { transaction });
-    if (!row) {
-      throw new AppError(
-        CODES.COMMON.NOT_FOUND.code,
-        CODES.COMMON.NOT_FOUND.status,
-        CODES.COMMON.NOT_FOUND.message,
-      );
-    }
-    return await row.update(payload, { transaction });
-  }
-  return await model.create(payload, { transaction });
-};
-
-/**
- * SearchLogic1
- * 세차 옵션(MST) 목록 조회
- * - 조건: woptMstIdx/busMstIdx/optionName/vehicleType
- * - 페이징: limit/offset
- * - 권한: busMstIdx가 있으면 본인(memIdx) 사업장인지 검증
- * - include: `washOptionDetails`(DTL 목록) 포함
- */
 const SearchLogic1 = async (memIdx, query = {}) => {
   const { woptMstIdx, busMstIdx, optionName, vehicleType, limit, offset } =
     query;
@@ -108,19 +60,10 @@ const SearchLogic1 = async (memIdx, query = {}) => {
     where.vehicle_type = String(vehicleType).trim();
 
   if (where.bus_mst_idx != null) {
-    const business = await BusinessMaster.findOne({
-      where: { bus_mst_idx: where.bus_mst_idx, mem_idx: memIdx },
-    });
-    if (!business) {
-      throw new AppError(
-        CODES.WASH_OPTION.FORBIDDEN_BUSINESS.code,
-        CODES.WASH_OPTION.FORBIDDEN_BUSINESS.status,
-        CODES.WASH_OPTION.FORBIDDEN_BUSINESS.message,
-      );
-    }
+    await AssertBusinessOwner(memIdx, where.bus_mst_idx);
   }
 
-  return await SearchInternal(WashOptionMaster, {
+  return QueryRepository.FindAndCount(WashOptionMaster, {
     where,
     limit,
     offset,
@@ -128,44 +71,20 @@ const SearchLogic1 = async (memIdx, query = {}) => {
       ["seq", "ASC"],
       ["wopt_mst_idx", "ASC"],
     ],
-    include: [
-      {
-        model: WashOptionDetail,
-        as: "washOptionDetails",
-        required: false,
-      },
-    ],
+    include: [mstDetailsInclude],
   });
 };
 
-/**
- * SaveLogic1
- * 세차 옵션(MST) 신규 저장
- * - busMstIdx 필수 + 본인 사업장 권한 검증 후 create
- */
 const SaveLogic1 = async (memIdx, body = {}) => {
   if (body.bus_mst_idx == null && body.busMstIdx == null) {
-    throw new AppError(
-      CODES.WASH_OPTION.MISSING_BUS_MST_IDX.code,
-      CODES.WASH_OPTION.MISSING_BUS_MST_IDX.status,
-      CODES.WASH_OPTION.MISSING_BUS_MST_IDX.message,
-    );
+    ThrowFromCode(CODES.WASH_OPTION.MISSING_BUS_MST_IDX);
   }
 
   const busMstIdx = body.bus_mst_idx ?? body.busMstIdx;
-  const business = await BusinessMaster.findOne({
-    where: { bus_mst_idx: busMstIdx, mem_idx: memIdx },
-  });
-  if (!business) {
-    throw new AppError(
-      CODES.WASH_OPTION.FORBIDDEN_BUSINESS.code,
-      CODES.WASH_OPTION.FORBIDDEN_BUSINESS.status,
-      CODES.WASH_OPTION.FORBIDDEN_BUSINESS.message,
-    );
-  }
+  await AssertBusinessOwner(memIdx, busMstIdx);
 
   const fields = normalizeMstInput(body);
-  return await SaveInternal(WashOptionMaster, "wopt_mst_idx", {
+  return QueryRepository.Upsert(WashOptionMaster, "wopt_mst_idx", {
     ...fields,
     bus_mst_idx: Number(busMstIdx),
     create_id: String(memIdx),
@@ -173,45 +92,17 @@ const SaveLogic1 = async (memIdx, body = {}) => {
   });
 };
 
-/**
- * SaveLogic2
- * 세차 옵션(MST) 수정 저장
- * - 대상 MST가 본인 사업장 소속인지 include로 권한 검증 후 update
- */
 const SaveLogic2 = async (memIdx, woptMstIdx, body = {}) => {
-  const existing = await WashOptionMaster.findByPk(woptMstIdx, {
-    include: [
-      {
-        model: BusinessMaster,
-        as: "businessMaster",
-        where: { mem_idx: memIdx },
-        required: true,
-      },
-    ],
-  });
-  if (!existing) {
-    throw new AppError(
-      CODES.WASH_OPTION.NOT_FOUND_MASTER.code,
-      CODES.WASH_OPTION.NOT_FOUND_MASTER.status,
-      CODES.WASH_OPTION.NOT_FOUND_MASTER.message,
-    );
-  }
+  await WashOptionRepository.FindOwnedMaster(memIdx, woptMstIdx);
 
   const fields = normalizeMstInput(body);
-  return await SaveInternal(WashOptionMaster, "wopt_mst_idx", {
+  return QueryRepository.Upsert(WashOptionMaster, "wopt_mst_idx", {
     ...fields,
     wopt_mst_idx: Number(woptMstIdx),
     update_id: String(memIdx),
   });
 };
 
-/**
- * SearchLogic2
- * 세차 옵션(DTL) 목록 조회
- * - 조건: woptDtlIdx/woptMstIdx/optionName/vehicleType
- * - 페이징: limit/offset
- * - 권한: woptMstIdx가 있으면 해당 MST가 본인 사업장 소속인지 검증
- */
 const SearchLogic2 = async (memIdx, query = {}) => {
   const { woptDtlIdx, woptMstIdx, optionName, vehicleType, limit, offset } =
     query;
@@ -227,27 +118,10 @@ const SearchLogic2 = async (memIdx, query = {}) => {
     where.vehicle_type = String(vehicleType).trim();
 
   if (where.wopt_mst_idx != null) {
-    const master = await WashOptionMaster.findOne({
-      where: { wopt_mst_idx: where.wopt_mst_idx },
-      include: [
-        {
-          model: BusinessMaster,
-          as: "businessMaster",
-          where: { mem_idx: memIdx },
-          required: true,
-        },
-      ],
-    });
-    if (!master) {
-      throw new AppError(
-        CODES.WASH_OPTION.FORBIDDEN_MASTER.code,
-        CODES.WASH_OPTION.FORBIDDEN_MASTER.status,
-        CODES.WASH_OPTION.FORBIDDEN_MASTER.message,
-      );
-    }
+    await WashOptionRepository.FindMasterByOwner(memIdx, where.wopt_mst_idx);
   }
 
-  return await SearchInternal(WashOptionDetail, {
+  return QueryRepository.FindAndCount(WashOptionDetail, {
     where,
     limit,
     offset,
@@ -258,42 +132,16 @@ const SearchLogic2 = async (memIdx, query = {}) => {
   });
 };
 
-/**
- * SaveLogic3
- * 세차 옵션(DTL) 신규 저장
- * - woptMstIdx 필수 + 해당 MST 본인 사업장 권한 검증 후 create
- */
 const SaveLogic3 = async (memIdx, body = {}) => {
   const woptMstIdx = body.wopt_mst_idx ?? body.woptMstIdx;
   if (woptMstIdx == null || String(woptMstIdx).trim() === "") {
-    throw new AppError(
-      CODES.WASH_OPTION.MISSING_WOPT_MST_IDX.code,
-      CODES.WASH_OPTION.MISSING_WOPT_MST_IDX.status,
-      CODES.WASH_OPTION.MISSING_WOPT_MST_IDX.message,
-    );
+    ThrowFromCode(CODES.WASH_OPTION.MISSING_WOPT_MST_IDX);
   }
 
-  const master = await WashOptionMaster.findOne({
-    where: { wopt_mst_idx: woptMstIdx },
-    include: [
-      {
-        model: BusinessMaster,
-        as: "businessMaster",
-        where: { mem_idx: memIdx },
-        required: true,
-      },
-    ],
-  });
-  if (!master) {
-    throw new AppError(
-      CODES.WASH_OPTION.FORBIDDEN_MASTER.code,
-      CODES.WASH_OPTION.FORBIDDEN_MASTER.status,
-      CODES.WASH_OPTION.FORBIDDEN_MASTER.message,
-    );
-  }
+  await WashOptionRepository.FindMasterByOwner(memIdx, woptMstIdx);
 
   const fields = normalizeDtlInput(body);
-  return await SaveInternal(WashOptionDetail, "wopt_dtl_idx", {
+  return QueryRepository.Upsert(WashOptionDetail, "wopt_dtl_idx", {
     ...fields,
     wopt_mst_idx: Number(woptMstIdx),
     create_id: String(memIdx),
@@ -301,67 +149,22 @@ const SaveLogic3 = async (memIdx, body = {}) => {
   });
 };
 
-/**
- * SaveLogic4
- * 세차 옵션(DTL) 수정 저장
- * - 대상 DTL이 본인 사업장 소속인지(MST→사업장) 권한 검증 후 update
- */
 const SaveLogic4 = async (memIdx, woptDtlIdx, body = {}) => {
-  const existing = await WashOptionDetail.findByPk(woptDtlIdx, {
-    include: [
-      {
-        model: WashOptionMaster,
-        as: "washOptionMaster",
-        required: true,
-        include: [
-          {
-            model: BusinessMaster,
-            as: "businessMaster",
-            where: { mem_idx: memIdx },
-            required: true,
-          },
-        ],
-      },
-    ],
-  });
-
-  if (!existing) {
-    throw new AppError(
-      CODES.WASH_OPTION.NOT_FOUND_DETAIL.code,
-      CODES.WASH_OPTION.NOT_FOUND_DETAIL.status,
-      CODES.WASH_OPTION.NOT_FOUND_DETAIL.message,
-    );
-  }
+  await WashOptionRepository.FindOwnedDetail(memIdx, woptDtlIdx);
 
   const fields = normalizeDtlInput(body);
-  return await SaveInternal(WashOptionDetail, "wopt_dtl_idx", {
+  return QueryRepository.Upsert(WashOptionDetail, "wopt_dtl_idx", {
     ...fields,
     wopt_dtl_idx: Number(woptDtlIdx),
     update_id: String(memIdx),
   });
 };
 
-/**
- * DeleteLogic1 — MST 삭제 (하위 DTL 선삭제 후 MST 삭제)
- */
 const DeleteLogic1 = async (memIdx, woptMstIdx) => {
-  const existing = await WashOptionMaster.findByPk(woptMstIdx, {
-    include: [
-      {
-        model: BusinessMaster,
-        as: "businessMaster",
-        where: { mem_idx: memIdx },
-        required: true,
-      },
-    ],
-  });
-  if (!existing) {
-    throw new AppError(
-      CODES.WASH_OPTION.NOT_FOUND_MASTER.code,
-      CODES.WASH_OPTION.NOT_FOUND_MASTER.status,
-      CODES.WASH_OPTION.NOT_FOUND_MASTER.message,
-    );
-  }
+  const existing = await WashOptionRepository.FindOwnedMaster(
+    memIdx,
+    woptMstIdx,
+  );
 
   await sequelize.transaction(async (transaction) => {
     await WashOptionDetail.destroy({
@@ -372,65 +175,22 @@ const DeleteLogic1 = async (memIdx, woptMstIdx) => {
   });
 };
 
-/**
- * DeleteLogic2 — DTL 삭제
- */
 const DeleteLogic2 = async (memIdx, woptDtlIdx) => {
-  const existing = await WashOptionDetail.findByPk(woptDtlIdx, {
-    include: [
-      {
-        model: WashOptionMaster,
-        as: "washOptionMaster",
-        required: true,
-        include: [
-          {
-            model: BusinessMaster,
-            as: "businessMaster",
-            where: { mem_idx: memIdx },
-            required: true,
-          },
-        ],
-      },
-    ],
-  });
-  if (!existing) {
-    throw new AppError(
-      CODES.WASH_OPTION.NOT_FOUND_DETAIL.code,
-      CODES.WASH_OPTION.NOT_FOUND_DETAIL.status,
-      CODES.WASH_OPTION.NOT_FOUND_DETAIL.message,
-    );
-  }
+  const existing = await WashOptionRepository.FindOwnedDetail(
+    memIdx,
+    woptDtlIdx,
+  );
   await existing.destroy();
 };
 
-/**
- * SearchLogic3 (Public)
- * 세차 옵션(MST) 목록 조회 (공개)
- * - 조건: busMstIdx 필수, optionName/vehicleType/limit/offset
- * - 권한: 없음(고객/비회원도 조회 가능)
- * - include: `washOptionDetails`(DTL 목록) 포함
- */
 const SearchLogic3 = async (query = {}) => {
   const { busMstIdx, optionName, vehicleType, limit, offset } = query;
 
   if (busMstIdx == null || String(busMstIdx).trim() === "") {
-    throw new AppError(
-      CODES.COMMON.BAD_REQUEST.code,
-      CODES.COMMON.BAD_REQUEST.status,
-      "busMstIdx가 필요합니다.",
-    );
+    ThrowFromCode(CODES.COMMON.BAD_REQUEST, "busMstIdx가 필요합니다.");
   }
 
-  const business = await BusinessMaster.findOne({
-    where: { bus_mst_idx: Number(busMstIdx) },
-  });
-  if (!business) {
-    throw new AppError(
-      CODES.COMMON.NOT_FOUND.code,
-      CODES.COMMON.NOT_FOUND.status,
-      "사업장을 찾을 수 없습니다.",
-    );
-  }
+  await FindById(busMstIdx, "사업장을 찾을 수 없습니다.");
 
   const where = { bus_mst_idx: Number(busMstIdx) };
   if (optionName != null && String(optionName).trim() !== "")
@@ -438,7 +198,7 @@ const SearchLogic3 = async (query = {}) => {
   if (vehicleType != null && String(vehicleType).trim() !== "")
     where.vehicle_type = String(vehicleType).trim();
 
-  return await SearchInternal(WashOptionMaster, {
+  return QueryRepository.FindAndCount(WashOptionMaster, {
     where,
     limit,
     offset,
@@ -446,13 +206,7 @@ const SearchLogic3 = async (query = {}) => {
       ["seq", "ASC"],
       ["wopt_mst_idx", "ASC"],
     ],
-    include: [
-      {
-        model: WashOptionDetail,
-        as: "washOptionDetails",
-        required: false,
-      },
-    ],
+    include: [mstDetailsInclude],
   });
 };
 
